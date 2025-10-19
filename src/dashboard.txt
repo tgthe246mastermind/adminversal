@@ -1,0 +1,1075 @@
+import React from 'react';
+import { useState, useEffect } from 'react';
+import { Zap, BarChart2, Link, Bot, TrendingUp, Layout, Settings, User, Edit, Users, Mic, Lightbulb, Instagram, Twitter, Linkedin, Youtube } from "lucide-react";
+
+function Dashboard() {
+    const [activeTab, setActiveTab] = useState('beta');
+    const [draggedElement, setDraggedElement] = useState(null);
+    const [stats, setStats] = useState({
+        followers: '24.7K',
+        engagement: '8.4%',
+        posts: '15'
+    });
+
+    // Tab data
+    const tabData = {
+        'beta': {
+            title: 'Beta Features',
+            subtitle: 'Explore cutting-edge social media tools'
+        },
+        'social-dashboard': {
+            title: 'Social Media Dashboard',
+            subtitle: 'Monitor your social media performance'
+        },
+        'mini-link': {
+            title: 'Mini Link App',
+            subtitle: 'Create your personalized link page'
+        },
+        'social-bots': {
+            title: 'Social Media Bots',
+            subtitle: 'Automated posting and scheduling'
+        },
+        'growth-bot': {
+            title: 'Growth Bot Analytics',
+            subtitle: 'AI-powered insights for growth'
+        },
+        'marketing-board': {
+            title: 'Marketing Board',
+            subtitle: 'Drag & drop marketing strategies'
+        },
+        'settings': {
+            title: 'Settings',
+            subtitle: 'Configure your preferences and account'
+        },
+        'profile': {
+            title: 'Profile',
+            subtitle: 'Manage your personal information and social accounts'
+        }
+    };
+
+    // Simulated real-time stats update
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setStats(prev => ({
+                ...prev,
+                followers: `${(parseFloat(prev.followers) + (Math.random() - 0.5) * 0.1).toFixed(1)}K`
+            }));
+        }, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleDragStart = (e, item) => {
+        setDraggedElement(item);
+        e.target.classList.add('dragging');
+    };
+
+    const handleDragEnd = (e) => {
+        e.target.classList.remove('dragging');
+        setDraggedElement(null);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    };
+
+    const handleDragLeave = (e) => {
+        e.currentTarget.classList.remove('drag-over');
+    };
+
+    const handleDrop = (e, zone) => {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        if (draggedElement) {
+            // In a real app, you'd update state to manage dropped items
+            // For simplicity, we'll just append a clone
+            const clonedElement = { ...draggedElement };
+            e.currentTarget.appendChild(document.createElement('div')).textContent = clonedElement;
+            setDraggedElement(null);
+        }
+    };
+
+    return (
+        <div className="dashboard">
+            <style jsx>{`
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: 'Noto Sans', sans-serif;
+                    background: #f8fafc;
+                    color: #1e293b;
+                }
+                .dashboard {
+                    display: flex;
+                    height: 100vh;
+                }
+                .sidebar {
+                    width: 280px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 2rem 0;
+                    position: fixed;
+                    height: 100vh;
+                    overflow-y: auto;
+                }
+                .sidebar-header {
+                    padding: 0 2rem 2rem;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                }
+                .sidebar-header h2 {
+                    font-size: 1.5rem;
+                    font-weight: 600;
+                }
+                .sidebar-nav {
+                    padding: 2rem 0;
+                }
+                .nav-item {
+                    display: flex;
+                    align-items: center;
+                    padding: 1rem 2rem;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    border-left: 3px solid transparent;
+                }
+                .nav-item:hover,
+                .nav-item.active {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-left-color: white;
+                }
+                .nav-item i {
+                    margin-right: 0.75rem;
+                    width: 20px;
+                    height: 20px;
+                }
+                .nav-item span {
+                    font-weight: 500;
+                }
+                .main-content {
+                    flex: 1;
+                    margin-left: 280px;
+                    overflow-y: auto;
+                }
+                .header {
+                    background: white;
+                    padding: 2rem;
+                    border-bottom: 1px solid #e2e8f0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .page-title {
+                    font-size: 2rem;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                }
+                .page-subtitle {
+                    color: #64748b;
+                }
+                .user-profile {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                }
+                .avatar {
+                    width: 40px;
+                    height: 40px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: 600;
+                }
+                .content {
+                    padding: 2rem;
+                }
+                .tab-content {
+                    display: none;
+                }
+                .tab-content.active {
+                    display: block;
+                }
+                .feature-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: 1.5rem;
+                }
+                .feature-card {
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    position: relative;
+                    transition: transform 0.3s ease;
+                }
+                .feature-card:hover {
+                    transform: translateY(-4px);
+                }
+                .feature-icon {
+                    width: 48px;
+                    height: 48px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 1rem;
+                }
+                .feature-icon i {
+                    color: white;
+                    width: 24px;
+                    height: 24px;
+                }
+                .feature-card h3 {
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                }
+                .feature-card p {
+                    color: #64748b;
+                    line-height: 1.6;
+                }
+                .beta-badge {
+                    position: absolute;
+                    top: 1rem;
+                    right: 1rem;
+                    background: #f59e0b;
+                    color: white;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 20px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                }
+                .dashboard-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 1.5rem;
+                }
+                .stats-card {
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    text-align: center;
+                }
+                .stats-card h3 {
+                    color: #64748b;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    margin-bottom: 1rem;
+                }
+                .stat-number {
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                    margin-bottom: 0.5rem;
+                }
+                .stat-change {
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                }
+                .stat-change.positive {
+                    color: #10b981;
+                }
+                .stat-change.neutral {
+                    color: #64748b;
+                }
+                .mini-link-container {
+                    max-width: 400px;
+                    margin: 0 auto;
+                }
+                .link-preview {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 2rem;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+                .avatar-section {
+                    text-align: center;
+                    margin-bottom: 2rem;
+                }
+                .profile-avatar {
+                    width: 80px;
+                    height: 80px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 2rem;
+                    font-weight: 600;
+                    margin: 0 auto 1rem;
+                }
+                .links-grid {
+                    display: grid;
+                    gap: 0.75rem;
+                    margin-bottom: 2rem;
+                }
+                .link-item {
+                    background: #f1f5f9;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    text-align: center;
+                    font-weight: 500;
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                }
+                .link-item:hover {
+                    background: #e2e8f0;
+                    transform: translateY(-2px);
+                }
+                .voice-note {
+                    background: #fef3c7;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.5rem;
+                    color: #92400e;
+                    font-weight: 500;
+                }
+                .bot-schedule h3 {
+                    margin-bottom: 1.5rem;
+                    font-size: 1.5rem;
+                }
+                .schedule-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 1.5rem;
+                }
+                .day-column {
+                    background: white;
+                    padding: 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+                .day-column h4 {
+                    margin-bottom: 1rem;
+                    color: #374151;
+                }
+                .post-slots {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+                .post-slot {
+                    background: #f3f4f6;
+                    padding: 0.75rem;
+                    border-radius: 6px;
+                    text-align: center;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                }
+                .insights-container h3 {
+                    margin-bottom: 1.5rem;
+                    font-size: 1.5rem;
+                }
+                .insights-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: 1rem;
+                }
+                .insight-card {
+                    background: white;
+                    padding: 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 1rem;
+                    transition: transform 0.3s ease;
+                }
+                .insight-card:hover {
+                    transform: translateY(-2px);
+                }
+                .insight-card i {
+                    color: #667eea;
+                    flex-shrink: 0;
+                    width: 20px;
+                    height: 20px;
+                }
+                .insight-card p {
+                    color: #374151;
+                    line-height: 1.6;
+                    font-style: italic;
+                }
+                .marketing-board h3 {
+                    margin-bottom: 1.5rem;
+                    font-size: 1.5rem;
+                }
+                .board-container {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 1.5rem;
+                }
+                .strategy-column {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 1.5rem;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+                .strategy-column h4 {
+                    margin-bottom: 1rem;
+                    color: #374151;
+                    text-align: center;
+                }
+                .strategy-items {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+                .strategy-item {
+                    background: #f3f4f6;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    text-align: center;
+                    font-weight: 500;
+                    cursor: grab;
+                    transition: all 0.3s ease;
+                }
+                .strategy-item:hover {
+                    background: #e5e7eb;
+                    transform: translateY(-2px);
+                }
+                .strategy-item.dragging {
+                    opacity: 0.5;
+                    cursor: grabbing;
+                }
+                .drop-zone {
+                    min-height: 200px;
+                    border: 2px dashed #d1d5db;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s ease;
+                }
+                .drop-zone.drag-over {
+                    border-color: #667eea;
+                    background: #f0f4ff;
+                }
+                .drop-hint {
+                    color: #9ca3af;
+                    font-style: italic;
+                }
+                .settings-container {
+                    max-width: 800px;
+                }
+                .settings-section {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 2rem;
+                    margin-bottom: 1.5rem;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+                .settings-section h3 {
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    margin-bottom: 1.5rem;
+                    color: #374151;
+                }
+                .settings-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1.5rem;
+                }
+                .setting-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .setting-item label {
+                    font-weight: 500;
+                    color: #374151;
+                }
+                .setting-select {
+                    padding: 0.5rem 0.75rem;
+                    border: 1px solid #d1d5db;
+                    border-radius: 6px;
+                    background: white;
+                    font-size: 0.875rem;
+                    min-width: 150px;
+                }
+                .toggle-switch {
+                    position: relative;
+                    width: 50px;
+                    height: 24px;
+                }
+                .toggle-switch input {
+                    opacity: 0;
+                    width: 0;
+                    height: 0;
+                }
+                .slider {
+                    position: absolute;
+                    cursor: pointer;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: #ccc;
+                    transition: .4s;
+                    border-radius: 24px;
+                }
+                .slider:before {
+                    position: absolute;
+                    content: "";
+                    height: 18px;
+                    width: 18px;
+                    left: 3px;
+                    bottom: 3px;
+                    background-color: white;
+                    transition: .4s;
+                    border-radius: 50%;
+                }
+                input:checked + .slider {
+                    background-color: #667eea;
+                }
+                input:checked + .slider:before {
+                    transform: translateX(26px);
+                }
+                .profile-container {
+                    max-width: 1000px;
+                }
+                .profile-header {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 2rem;
+                    margin-bottom: 2rem;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    display: flex;
+                    gap: 2rem;
+                    align-items: center;
+                }
+                .profile-avatar-large {
+                    width: 120px;
+                    height: 120px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 3rem;
+                    font-weight: 600;
+                    flex-shrink: 0;
+                }
+                .profile-info h2 {
+                    font-size: 2rem;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                }
+                .profile-username {
+                    color: #667eea;
+                    font-weight: 500;
+                    margin-bottom: 1rem;
+                }
+                .profile-bio {
+                    color: #64748b;
+                    line-height: 1.6;
+                }
+                .profile-stats {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 1.5rem;
+                    margin-bottom: 2rem;
+                }
+                .profile-stat {
+                    background: white;
+                    padding: 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    text-align: center;
+                }
+                .stat-value {
+                    font-size: 2rem;
+                    font-weight: 700;
+                    color: #374151;
+                    margin-bottom: 0.5rem;
+                }
+                .stat-label {
+                    color: #64748b;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                }
+                .profile-sections {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                    gap: 2rem;
+                    margin-bottom: 2rem;
+                }
+                .profile-section {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 2rem;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+                .profile-section h3 {
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    margin-bottom: 1.5rem;
+                    color: #374151;
+                }
+                .form-group {
+                    margin-bottom: 1.5rem;
+                }
+                .form-group label {
+                    display: block;
+                    margin-bottom: 0.5rem;
+                    font-weight: 500;
+                    color: #374151;
+                }
+                .profile-input {
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 1px solid #d1d5db;
+                    border-radius: 6px;
+                    font-size: 0.875rem;
+                    transition: border-color 0.3s ease;
+                }
+                .profile-input:focus {
+                    outline: none;
+                    border-color: #667eea;
+                    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                }
+                .social-accounts {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+                .social-account {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    padding: 1rem;
+                    background: #f8fafc;
+                    border-radius: 8px;
+                }
+                .social-account i {
+                    width: 20px;
+                    height: 20px;
+                    color: #667eea;
+                }
+                .social-account span:first-of-type {
+                    flex: 1;
+                    font-weight: 500;
+                }
+                .status {
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 20px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                }
+                .status.connected {
+                    background: #d1fae5;
+                    color: #065f46;
+                }
+                .status.disconnected {
+                    background: #fee2e2;
+                    color: #991b1b;
+                }
+                .profile-actions {
+                    display: flex;
+                    gap: 1rem;
+                    justify-content: flex-end;
+                }
+                .btn {
+                    padding: 0.75rem 1.5rem;
+                    border: none;
+                    border-radius: 6px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+                .btn-primary {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                }
+                .btn-primary:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                }
+                .btn-secondary {
+                    background: #f1f5f9;
+                    color: #64748b;
+                }
+                .btn-secondary:hover {
+                    background: #e2e8f0;
+                }
+                @media (max-width: 768px) {
+                    .sidebar {
+                        width: 100%;
+                        position: static;
+                        height: auto;
+                    }
+                    .main-content {
+                        margin-left: 0;
+                    }
+                    .dashboard {
+                        flex-direction: column;
+                    }
+                    .header {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 1rem;
+                    }
+                    .board-container {
+                        grid-template-columns: 1fr;
+                    }
+                    .profile-header {
+                        flex-direction: column;
+                        text-align: center;
+                    }
+                    .profile-sections {
+                        grid-template-columns: 1fr;
+                    }
+                    .profile-actions {
+                        justify-content: center;
+                    }
+                    .setting-item {
+                        flex-direction: column;
+                        gap: 0.5rem;
+                        align-items: flex-start;
+                    }
+                }
+            `}</style>
+            <aside className="sidebar">
+                <div className="sidebar-header">
+                    <h2>AdminVersal</h2>
+                </div>
+                <nav className="sidebar-nav">
+                    {Object.keys(tabData).map(tab => (
+                        <div
+                            key={tab}
+                            className={`nav-item ${activeTab === tab ? 'active' : ''}`}
+                            onClick={() => setActiveTab(tab)}
+                            data-tab={tab}
+                        >
+                            {tab === 'beta' && <Zap size={20} />}
+                            {tab === 'social-dashboard' && <BarChart2 size={20} />}
+                            {tab === 'mini-link' && <Link size={20} />}
+                            {tab === 'social-bots' && <Bot size={20} />}
+                            {tab === 'growth-bot' && <TrendingUp size={20} />}
+                            {tab === 'marketing-board' && <Layout size={20} />}
+                            {tab === 'settings' && <Settings size={20} />}
+                            {tab === 'profile' && <User size={20} />}
+                            <span>{tabData[tab].title}</span>
+                        </div>
+                    ))}
+                </nav>
+            </aside>
+            <main className="main-content">
+                <header className="header">
+                    <div>
+                        <h1 className="page-title">{tabData[activeTab].title}</h1>
+                        <p className="page-subtitle">{tabData[activeTab].subtitle}</p>
+                    </div>
+                    <div className="user-profile">
+                        <div className="avatar">S</div>
+                        <span>Scarlett</span>
+                    </div>
+                </header>
+                <div className="content">
+                    <div className={`tab-content ${activeTab === 'beta' ? 'active' : ''}`} id="beta">
+                        <div className="feature-grid">
+                            <div className="feature-card">
+                                <div className="feature-icon"><BarChart2 size={24} color="white" /></div>
+                                <h3>AI-Powered Analytics</h3>
+                                <p>Get insights from advanced AI algorithms analyzing your social media performance</p>
+                                <span className="beta-badge">Beta</span>
+                            </div>
+                            <div className="feature-card">
+                                <div className="feature-icon"><Edit size={24} color="white" /></div>
+                                <h3>Smart Content Creation</h3>
+                                <p>Generate engaging content with AI assistance tailored to your audience</p>
+                                <span className="beta-badge">Beta</span>
+                            </div>
+                            <div className="feature-card">
+                                <div className="feature-icon"><Users size={24} color="white" /></div>
+                                <h3>Audience Insights</h3>
+                                <p>Deep dive into your audience demographics and behavior patterns</p>
+                                <span className="beta-badge">Beta</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`tab-content ${activeTab === 'social-dashboard' ? 'active' : ''}`} id="social-dashboard">
+                        <div className="dashboard-grid">
+                            <div className="stats-card">
+                                <h3>Total Followers</h3>
+                                <div className="stat-number">{stats.followers}</div>
+                                <div className="stat-change positive">+12.3%</div>
+                            </div>
+                            <div className="stats-card">
+                                <h3>Engagement Rate</h3>
+                                <div className="stat-number">{stats.engagement}</div>
+                                <div className="stat-change positive">+2.1%</div>
+                            </div>
+                            <div className="stats-card">
+                                <h3>Posts This Week</h3>
+                                <div className="stat-number">{stats.posts}</div>
+                                <div className="stat-change neutral">Same</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`tab-content ${activeTab === 'mini-link' ? 'active' : ''}`} id="mini-link">
+                        <div className="mini-link-container">
+                            <div className="link-preview">
+                                <div className="avatar-section">
+                                    <div className="profile-avatar">S</div>
+                                    <h3>Scarlett's Links</h3>
+                                </div>
+                                <div className="links-grid">
+                                    {['Website', 'Instagram', 'Twitter', 'LinkedIn', 'YouTube', 'TikTok', 'Portfolio', 'Blog', 'Shop', 'Contact'].map(link => (
+                                        <div key={link} className="link-item">{link}</div>
+                                    ))}
+                                </div>
+                                <div className="voice-note">
+                                    <Mic size={20} color="#92400e" />
+                                    <span>Voice Introduction</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`tab-content ${activeTab === 'social-bots' ? 'active' : ''}`} id="social-bots">
+                        <div className="bot-schedule">
+                            <h3>Automated Posting Schedule</h3>
+                            <div className="schedule-grid">
+                                {['Monday', 'Tuesday'].map(day => (
+                                    <div key={day} className="day-column">
+                                        <h4>{day}</h4>
+                                        <div className="post-slots">
+                                            {['9:00 AM', '12:00 PM', '3:00 PM', '6:00 PM', '8:00 PM'].map(time => (
+                                                <div key={time} className="post-slot">{time}</div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`tab-content ${activeTab === 'growth-bot' ? 'active' : ''}`} id="growth-bot">
+                        <div className="insights-container">
+                            <h3>AI Growth Insights</h3>
+                            <div className="insights-grid">
+                                {[
+                                    "Post inspiring quotes on weekends for 40% more engagement",
+                                    "Schedule holiday posts 3 days in advance for maximum reach",
+                                    "30% of your audience prefers bright, colorful content",
+                                    "Best posting time: 2-4 PM on weekdays",
+                                    "Video content gets 60% more shares than images"
+                                ].map((insight, index) => (
+                                    <div key={index} className="insight-card">
+                                        <Lightbulb size={20} color="#667eea" />
+                                        <p>{insight}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`tab-content ${activeTab === 'marketing-board' ? 'active' : ''}`} id="marketing-board">
+                        <div className="marketing-board">
+                            <h3>Drag & Drop Marketing Strategies</h3>
+                            <div className="board-container">
+                                <div className="strategy-column">
+                                    <h4>Strategy Bank</h4>
+                                    <div className="strategy-items">
+                                        {['Content Calendar', 'Influencer Outreach', 'Hashtag Research', 'Competitor Analysis', 'User Generated Content'].map(item => (
+                                            <div
+                                                key={item}
+                                                className="strategy-item draggable"
+                                                draggable
+                                                onDragStart={(e) => handleDragStart(e, item)}
+                                                onDragEnd={handleDragEnd}
+                                            >
+                                                {item}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div
+                                    className="strategy-column drop-zone"
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, 'active')}
+                                >
+                                    <h4>Active Campaigns</h4>
+                                    <div className="drop-hint">Drag strategies here to activate</div>
+                                </div>
+                                <div
+                                    className="strategy-column drop-zone"
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, 'completed')}
+                                >
+                                    <h4>Completed</h4>
+                                    <div className="drop-hint">Completed strategies appear here</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`tab-content ${activeTab === 'settings' ? 'active' : ''}`} id="settings">
+                        <div className="settings-container">
+                            <div className="settings-section">
+                                <h3>Account Settings</h3>
+                                <div className="settings-group">
+                                    <div className="setting-item">
+                                        <label>Email Notifications</label>
+                                        <div className="toggle-switch">
+                                            <input type="checkbox" id="email-notifications" />
+                                            <span className="slider"></span>
+                                        </div>
+                                    </div>
+                                    <div className="setting-item">
+                                        <label>Push Notifications</label>
+                                        <div className="toggle-switch">
+                                            <input type="checkbox" id="push-notifications" />
+                                            <span className="slider"></span>
+                                        </div>
+                                    </div>
+                                    <div className="setting-item">
+                                        <label>Auto-post Schedule</label>
+                                        <select className="setting-select">
+                                            <option>Every 4 hours</option>
+                                            <option>Twice daily</option>
+                                            <option>Daily</option>
+                                            <option>Custom</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="settings-section">
+                                <h3>Privacy Settings</h3>
+                                <div className="settings-group">
+                                    <div className="setting-item">
+                                        <label>Profile Visibility</label>
+                                        <select className="setting-select">
+                                            <option>Public</option>
+                                            <option>Private</option>
+                                            <option>Friends Only</option>
+                                        </select>
+                                    </div>
+                                    <div className="setting-item">
+                                        <label>Data Analytics</label>
+                                        <div className="toggle-switch">
+                                            <input type="checkbox" id="data-analytics" />
+                                            <span className="slider"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="settings-section">
+                                <h3>Appearance</h3>
+                                <div className="settings-group">
+                                    <div className="setting-item">
+                                        <label>Theme</label>
+                                        <select className="setting-select">
+                                            <option>Light</option>
+                                            <option>Dark</option>
+                                            <option>Auto</option>
+                                        </select>
+                                    </div>
+                                    <div className="setting-item">
+                                        <label>Language</label>
+                                        <select className="setting-select">
+                                            <option>English</option>
+                                            <option>Spanish</option>
+                                            <option>French</option>
+                                            <option>German</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`tab-content ${activeTab === 'profile' ? 'active' : ''}`} id="profile">
+                        <div className="profile-container">
+                            <div className="profile-header">
+                                <div className="profile-avatar-large">S</div>
+                                <div className="profile-info">
+                                    <h2>Scarlett Johnson</h2>
+                                    <div className="profile-username">@scarlett_j</div>
+                                    <p className="profile-bio">Social Media Strategist & Content Creator. Helping brands grow their online presence through data-driven insights.</p>
+                                </div>
+                            </div>
+                            <div className="profile-stats">
+                                <div className="profile-stat">
+                                    <div className="stat-value">127</div>
+                                    <div className="stat-label">Campaigns</div>
+                                </div>
+                                <div className="profile-stat">
+                                    <div className="stat-value">24.7K</div>
+                                    <div className="stat-label">Total Reach</div>
+                                </div>
+                                <div className="profile-stat">
+                                    <div className="stat-value">8.4%</div>
+                                    <div className="stat-label">Avg. Engagement</div>
+                                </div>
+                                <div className="profile-stat">
+                                    <div className="stat-value">95%</div>
+                                    <div className="stat-label">Success Rate</div>
+                                </div>
+                            </div>
+                            <div className="profile-sections">
+                                <div className="profile-section">
+                                    <h3>Personal Information</h3>
+                                    <div className="form-group">
+                                        <label>Full Name</label>
+                                        <input className="profile-input" type="text" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Email</label>
+                                        <input className="profile-input" type="email" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Phone</label>
+                                        <input className="profile-input" type="tel" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Location</label>
+                                        <input className="profile-input" type="text" />
+                                    </div>
+                                </div>
+                                <div className="profile-section">
+                                    <h3>Social Accounts</h3>
+                                    <div className="social-accounts">
+                                        <div className="social-account">
+                                            <Instagram size={20} color="#667eea" />
+                                            <span>@scarlett_creative</span>
+                                            <span className="status connected">Connected</span>
+                                        </div>
+                                        <div className="social-account">
+                                            <Twitter size={20} color="#667eea" />
+                                            <span>@scarlettj</span>
+                                            <span className="status connected">Connected</span>
+                                        </div>
+                                        <div className="social-account">
+                                            <Linkedin size={20} color="#667eea" />
+                                            <span>scarlett-johnson</span>
+                                            <span className="status connected">Connected</span>
+                                        </div>
+                                        <div className="social-account">
+                                            <Youtube size={20} color="#667eea" />
+                                            <span>ScarCreative</span>
+                                            <span className="status disconnected">Disconnected</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="profile-actions">
+                                <button className="btn btn-primary">Save Changes</button>
+                                <button className="btn btn-secondary">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+}
+
+export default Dashboard;
