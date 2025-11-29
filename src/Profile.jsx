@@ -93,14 +93,18 @@ function Profile() {
         fetchAccounts();
     }, []);
 
-    // FIXED: Always use backend URL for OAuth callback
+    // Always use backend URL for OAuth callback
     const handleFacebookLogin = () => {
         const state = crypto.randomUUID();
         sessionStorage.setItem('oauth_state', state);
 
+        const redirectUri = `${import.meta.env.VITE_API_URL}/api/auth/facebook/callback`;
+        // 🔍 Debug: see exactly what redirect_uri is being sent to Facebook
+        console.log('FB redirect_uri =>', redirectUri);
+
         const params = new URLSearchParams({
             client_id: import.meta.env.VITE_FB_APP_ID,
-            redirect_uri: `${import.meta.env.VITE_API_URL}/api/auth/facebook/callback`,
+            redirect_uri: redirectUri,
             scope: 'pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,instagram_basic,instagram_content_publish,instagram_manage_messages,email',
             response_type: 'code',
             state,
