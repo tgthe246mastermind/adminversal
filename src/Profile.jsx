@@ -1,4 +1,3 @@
-// src/components/Profile.jsx
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Instagram, Facebook, AlertCircle, LogOut, Loader2 } from "lucide-react";
@@ -7,6 +6,23 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
+
+// Helper to build a *clean* backend OAuth callback URL
+function getFacebookRedirectUri() {
+  let base = import.meta.env.VITE_API_URL;
+
+  // If VITE_API_URL is missing or looks suspicious, fall back to the known-good URL
+  if (!base || typeof base !== 'string' || !base.startsWith('http')) {
+    base = 'https://adminversal-api.lancerforprofit246.workers.dev';
+  }
+
+  // Remove trailing slashes to avoid double slashes
+  base = base.replace(/\/+$/, '');
+
+  const redirectUri = `${base}/api/auth/facebook/callback`;
+  console.log('FB redirect_uri =>', redirectUri);
+  return redirectUri;
+}
 
 function Profile() {
     const [accounts, setAccounts] = useState([]);
@@ -98,9 +114,7 @@ function Profile() {
         const state = crypto.randomUUID();
         sessionStorage.setItem('oauth_state', state);
 
-        const redirectUri = `${import.meta.env.VITE_API_URL}/api/auth/facebook/callback`;
-        // 🔍 Debug: see exactly what redirect_uri is being sent to Facebook
-        console.log('FB redirect_uri =>', redirectUri);
+        const redirectUri = getFacebookRedirectUri();
 
         const params = new URLSearchParams({
             client_id: import.meta.env.VITE_FB_APP_ID,
