@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trident Medical</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- CSS Reset & Base Styles --- */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary-color: #FF6200; /* Bright Orange */
+            --secondary-color: #003087; /* Dark Navy Blue */
+            --text-color: #333; /* Dark Gray for text */
+            --text-light: #6c757d; /* Lighter Gray */
+            --white: #FFFFFF; /* White */
+            --light-bg: #f8f9fa; /* Very light gray background */
+            --border-color: #dee2e6;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.15);
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden; /* Prevent horizontal overflow */
+        }
+
+        /* --- Utility Classes --- */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem; /* Reduced padding for smaller screens */
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 28px;
+            border-radius: var(--border-radius);
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background-color: #e65800;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .btn-secondary:hover {
+            background-color: #002260;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            transition: var(--transition);
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .section {
+            padding: 4rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* --- Header & Navigation --- */
+        .main-header {
+            background: var(--white);
+            box-shadow: var(--shadow);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+        }
+
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 70px; /* Adjust size as needed */
+            border-radius: 20px;
+            width: auto;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 5px;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover::after,
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        .mobile-nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .hamburger {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background: var(--secondary-color);
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .hamburger::before,
+        .hamburger::after {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 3px;
+            background: var(--secondary-color);
+            left: 0;
+            transition: var(--transition);
+        }
+
+        .hamburger::before {
+            top: -8px;
+        }
+
+        .hamburger::after {
+            bottom: -8px;
+        }
+
+        /* --- Open Day Side Banner --- */
+        .open-day-banner {
+            position: fixed;
+            top: 20vh;
+            right: 20px;
+            width: 320px;
+            max-height: 60vh;
+            background: linear-gradient(135deg, var(--primary-color), #e65800);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 999;
+            transition: all 0.5s ease;
+            overflow-y: auto;
+        }
+
+        .open-day-banner.hidden {
+            right: -350px;
+            opacity: 0;
+        }
+
+        .open-day-banner h4 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .open-day-banner .highlight {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .open-day-banner ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .open-day-banner ul li {
+            margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .open-day-banner ul li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .open-day-toggle {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            transform: translateY(-50%);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .open-day-toggle:hover {
+            background: #e65800;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        /* --- Video Icon Styles --- */
+        .video-icon {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 1rem;
+            padding: 10px;
+            background: rgba(255, 98, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .video-icon:hover {
+            color: #e65800;
+            transform: scale(1.05);
+            background: rgba(255, 98, 0, 0.2);
+        }
+
+        .video-icon i {
+            font-size: 1.5rem;
+        }
+
+        /* --- Video Card Styles --- */
+        .video-card iframe {
+            width: 100%;
+            height: 200px;
+            border: none;
+            border-radius: var(--border-radius);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* --- Partnerships Section Styles --- */
+        .partnerships-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+            margin-left:300px;
+        }
+
+        .partnership-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .partnership-card i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .partnership-card img {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .partnership-card h4 {
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+
+        .partnership-card p {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+
+        /* --- Main Content Sections --- */
+        .hero {
+            background-image: linear-gradient(rgba(0, 48, 135, 0.6), rgba(0, 48, 135, 0.6)), url('hero-background.png');
+            background-size: cover;
+            background-position: center;
+            color: var(--white);
+            text-align: center;
+            padding: 6rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+
+        .service-header {
+            color: var(--secondary-color);
+            font-weight: 600;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .about-section {
+            background-color: var(--light-bg);
+        }
+
+        .doctors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .doctor-card {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .doctor-card img {
+            width: 250px;
+            height: 300px;
+            object-fit: cover;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .doctor-card h3 {
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .doctor-card .title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .doctor-card p {
+            color: var(--text-light);
+            line-height: 1.7;
+        }
+
+        .testimonial-section {
+            padding: 4rem 0;
+            background-color: var(--light-bg);
+        }
+
+        .testimonial-slider {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .testimonial-slide {
+            display: none;
+            text-align: center;
+        }
+
+        .testimonial-slide.active {
+            display: block;
+        }
+
+        .testimonial-slide .card {
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .testimonial-slide p {
+            font-style: italic;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+        }
+
+        .testimonial-slide .author {
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        .slider-controls {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .slider-controls button {
+            background: none;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 0.5rem 1rem;
+            margin: 0 0.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .slider-controls button:hover {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .calendly-section {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .calendly-section .btn-primary {
+            padding: 16px 40px;
+            font-size: 1.2rem;
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .calendly-section .btn-primary:hover {
+            background-color: #e65800;
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .resources-grid, .legal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .contact-info h3, .office-hours h3 {
+            color: var(--secondary-color);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .main-footer {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 3rem 0 0;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-col h4 {
+            color: var(--white);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .footer-col h4::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: var(--primary-color);
+        }
+
+        .footer-col p {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul a {
+            text-decoration: none;
+            color: var(--white);
+            transition: var(--transition);
+        }
+
+        .footer-col ul a:hover {
+            color: var(--primary-color);
+            padding-left: 5px;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+
+        /* Medical Certificates Section Styles */
+        .certificates-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .certificate-card {
+            background: linear-gradient(135deg, var(--primary-color), #e65800);
+            color: var(--white);
+            text-align: center;
+            padding: 2rem 1rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        .certificate-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .certificate-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--white);
+        }
+
+        .certificate-card p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        /* --- Responsive Design --- */
+        /* Desktop (≥1200px) - Base styles already cover this */
+        @media (max-width: 1199px) {
+            .container {
+                max-width: 960px;
+            }
+
+            .hero h1 {
+                font-size: 3rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .section-title {
+                font-size: 2.2rem;
+            }
+
+            .doctors-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            }
+
+            .doctor-card img {
+                width: 220px;
+                height: 260px;
+            }
+        }
+
+        /* Laptop (992px-1199px) */
+        @media (max-width: 1199px) and (min-width: 992px) {
+            .services-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .certificates-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .partnerships-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .open-day-banner {
+                width: 300px;
+                right: 15px;
+            }
+
+            .nav-links {
+                gap: 1.5rem;
+            }
+
+            .nav-links a {
+                font-size: 0.95rem;
+            }
+        }
+
+        /* Tablet (768px-991px) */
+        @media (max-width: 991px) {
+            .container {
+                max-width: 720px;
+                padding: 0 0.75rem;
+            }
+
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .section-subtitle {
+                font-size: 1rem;
+            }
+
+            .services-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .certificates-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .partnerships-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .doctor-card img {
+                width: 200px;
+                height: 240px;
+            }
+
+            .calendly-section .btn-primary {
+                padding: 14px 32px;
+                font-size: 1.1rem;
+            }
+
+            .testimonial-slider {
+                max-width: 100%;
+            }
+
+            .video-card iframe {
+                height: 180px;
+            }
+
+            .partnership-card img {
+                width: 100px;
+                height: 100px;
+            }
+
+            /* Open Day Banner for Tablet */
+            .open-day-banner {
+                position: fixed;
+                bottom: 20px;
+                top: auto;
+                right: 50%;
+                transform: translateX(50%);
+                width: 90%;
+                max-width: 350px;
+                padding: 1.5rem;
+                font-size: 0.9rem;
+                border-radius: var(--border-radius);
+                box-shadow: var(--shadow-lg);
+                z-index: 999;
+            }
+
+            .open-day-toggle {
+                display: flex !important;
+                bottom: 80px;
+                top: auto;
+                right: 50%;
+                transform: translateX(50%);
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+
+            .open-day-banner h4 {
+                font-size: 1.1rem;
+            }
+
+            .open-day-banner .highlight {
+                font-size: 0.85rem;
+                padding: 0.75rem;
+            }
+
+            .open-day-banner ul li {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Mobile L (576px-767px) */
+        @media (max-width: 767px) {
+            html {
+                font-size: 15px;
+            }
+
+            .container {
+                max-width: 540px;
+                padding: 0 0.75rem;
+            }
+
+            .main-nav {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 70%;
+                height: 100vh;
+                background: var(--white);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+                transition: right 0.4s ease-in-out;
+            }
+
+            .main-nav.active {
+                right: 0;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                text-align: center;
+                gap: 2.5rem;
+            }
+
+            .nav-links a {
+                font-size: 1.5rem;
+            }
+
+            .mobile-nav-toggle {
+                display: block;
+            }
+
+            body.nav-open {
+                overflow: hidden;
+            }
+
+            .mobile-nav-toggle.active .hamburger {
+                background: transparent;
+            }
+
+            .mobile-nav-toggle.active .hamburger::before {
+                transform: rotate(45deg);
+                top: 0;
+            }
+
+            .mobile-nav-toggle.active .hamburger::after {
+                transform: rotate(-45deg);
+                bottom: 0;
+            }
+
+            .hero {
+                min-height: 60vh;
+                padding: 4rem 0;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 0.9rem;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .certificates-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .partnerships-grid {
+                grid-template-columns: 1fr;
+                margin-right
+            }
+
+            .doctors-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .doctor-card img {
+                width: 180px;
+                height: 220px;
+            }
+
+            .calendly-section .btn-primary {
+                padding: 12px 24px;
+                font-size: 1rem;
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .service-header {
+                font-size: 1.2rem;
+            }
+
+            .slider-controls {
+                margin-top: 1rem;
+            }
+
+            .slider-controls button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .footer-col h4::after {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .video-card iframe {
+                height: 160px;
+            }
+
+            .partnership-card img {
+                width: 90px;
+                height: 90px;
+            }
+
+            /* Open Day Banner for Mobile L */
+            .open-day-banner {
+                position: fixed;
+                bottom: 20px;
+                top: auto;
+                right: 50%;
+                transform: translateX(50%);
+                width: 90%;
+                max-width: 350px;
+                padding: 1.5rem;
+                font-size: 0.9rem;
+                border-radius: var(--border-radius);
+                box-shadow: var(--shadow-lg);
+                z-index: 999;
+            }
+
+            .open-day-toggle {
+                display: flex !important;
+                bottom: 80px;
+                top: auto;
+                right: 50%;
+                transform: translateX(50%);
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+
+            .open-day-banner h4 {
+                font-size: 1.1rem;
+            }
+
+            .open-day-banner .highlight {
+                font-size: 0.85rem;
+                padding: 0.75rem;
+            }
+
+            .open-day-banner ul li {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Mobile M (375px-575px) */
+        @media (max-width: 575px) {
+            html {
+                font-size: 14px;
+            }
+
+            .container {
+                padding: 0 0.5rem;
+            }
+
+            .section {
+                padding: 3rem 0;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .section-subtitle {
+                font-size: 0.9rem;
+                max-width: 90%;
+            }
+
+            .hero {
+                min-height: 50vh;
+                padding: 3rem 0;
+            }
+
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .hero p {
+                font-size: 0.85rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+
+            .doctor-card {
+                padding: 1.5rem;
+            }
+
+            .doctor-card img {
+                width: 160px;
+                height: 200px;
+            }
+
+            .calendly-section .calendly-inline-widget {
+                height: 600px;
+                min-width: 100%;
+            }
+
+            .map-container iframe {
+                height: 300px;
+                width: 100%;
+            }
+
+            .video-card iframe {
+                height: 140px;
+            }
+
+            .partnership-card img {
+                width: 80px;
+                height: 80px;
+            }
+
+            /* Open Day Banner for Mobile M */
+            .open-day-banner {
+                width: 90%;
+                max-width: 280px;
+                bottom: 15px;
+                padding: 1rem;
+                font-size: 0.8rem;
+            }
+
+            .open-day-toggle {
+                width: 35px;
+                height: 35px;
+                bottom: 70px;
+                font-size: 0.9rem;
+            }
+
+            .open-day-banner h4 {
+                font-size: 1rem;
+            }
+
+            .open-day-banner .highlight {
+                font-size: 0.8rem;
+            }
+
+            .open-day-banner ul li {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Mobile S (≤374px) */
+        @media (max-width: 374px) {
+            html {
+                font-size: 13px;
+            }
+
+            .container {
+                padding: 0 0.5rem;
+            }
+
+            .section {
+                padding: 2.5rem 0;
+            }
+
+            .section-title {
+                font-size: 1.6rem;
+            }
+
+            .section-subtitle {
+                font-size: 0.85rem;
+            }
+
+            .hero {
+                min-height: 40vh;
+                padding: 2.5rem 0;
+            }
+
+            .hero h1 {
+                font-size: 1.6rem;
+            }
+
+            .hero p {
+                font-size: 0.8rem;
+            }
+
+            .btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+
+            .doctor-card img {
+                width: 140px;
+                height: 180px;
+            }
+
+            .calendly-section .btn-primary {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+                max-width: 100%;
+            }
+
+            .calendly-section .calendly-inline-widget {
+                height: 550px;
+                min-width: 100%;
+            }
+
+            .testimonial-slide .card {
+                min-height: 180px;
+                padding: 1rem;
+            }
+
+            .slider-controls button {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.8rem;
+            }
+
+            .contact-info p,
+            .office-hours table {
+                font-size: 0.9rem;
+            }
+
+            .map-container iframe {
+                height: 250px;
+                width: 100%;
+            }
+
+            .video-card iframe {
+                height: 120px;
+            }
+
+            .partnership-card img {
+                width: 70px;
+                height: 70px;
+            }
+
+            /* Open Day Banner for Mobile S */
+            .open-day-banner {
+                width: 90%;
+                max-width: 260px;
+                bottom: 10px;
+                padding: 0.8rem;
+                font-size: 0.75rem;
+            }
+
+            .open-day-toggle {
+                width: 30px;
+                height: 30px;
+                bottom: 60px;
+                font-size: 0.8rem;
+            }
+
+            .open-day-banner h4 {
+                font-size: 0.9rem;
+            }
+
+            .open-day-banner .highlight {
+                font-size: 0.75rem;
+                padding: 0.5rem;
+            }
+
+            .open-day-banner ul li {
+                font-size: 0.75rem;
+            }
+        }
+
+        .f-active {
+            color: var(--primary-color) !important;
+        }
+    </style>
+    <!-- Calendly Inline Widget -->
+    <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
+</head>
+<body>
+    <!-- Open Day Side Banner - Visible on All Devices -->
+    <button class="open-day-toggle" id="openDayToggle" title="Hide Open Day Banner">
+        <i class="fas fa-times"></i>
+    </button>
+    
+    <div class="open-day-banner" id="openDayBanner">
+        <button id="closeBanner" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--white); font-size: 1.5rem; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;" aria-label="Close Open Day Banner">×</button>
+        <h4>🩺 Open Day Event</h4>
+        <div class="highlight">Every first Saturday of the Month</div>
+        <p><strong>FREE Health Checks:</strong></p>
+        <ul>
+            <li>Blood Sugar Testing</li>
+            <li>Blood Pressure Screening</li>
+            <li>Weight & BMI Assessment</li>
+        </ul>
+        <p><strong>Plus:</strong> 10-minute consultation with our doctors</p>
+        <div style="text-align: center; margin-top: 1rem;">
+        </div>
+    </div>
+
+    <header class="main-header">
+        <div class="container">
+            <a href="#" class="logo-link">
+                <img src="tridentmedical.png" alt="Trident Medical Logo" class="logo-img">
+            </a>
+            <nav class="main-nav" id="mainNav">
+                <ul class="nav-links">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#about">About Us</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#certificates">Medical Certificates</a></li>
+                    <li><a href="#appointments">Appointments</a></li>
+                    <li><a href="Resources.html">Patient Resources</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+            <button class="mobile-nav-toggle" aria-label="Toggle navigation" id="mobileNavToggle">
+                <span class="hamburger"></span>
+            </button>
+        </div>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="container hero-content">
+            <h1>Welcome to Trident Medical</h1>
+            <p>Your trusted partner in health, providing compassionate care for the whole family.</p>
+            <div class="hero-buttons">
+                <a href="#appointments" class="btn btn-primary">Book Appointment</a>
+                <a href="#services" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section section" id="about">
+        <div class="container">
+            <h2 class="section-title">About Us</h2>
+            <p class="section-subtitle">Meet our dedicated team of healthcare professionals committed to your well-being.</p>
+            <div class="doctors-grid">
+                <div class="card doctor-card">
+                    <img src="drpowlett.jpeg" alt="Dr. Dale Powlett">
+                    <h3>Dr. Dale Powlett</h3>
+                    <p class="title">MD, Family Medicine</p>
+                    <p>With over 15 years of experience in family medicine, Dr. Powlett specializes in preventive care and chronic disease management. He is dedicated to providing personalized treatment plans for patients of all ages.</p>
+                </div>
+                <div class="card doctor-card">
+                    <img src="drthomas.jpeg" alt="Dr. Bridget Thomas-Christie">
+                    <h3>Dr. Bridget Thomas-Christie</h3>
+                    <p class="title">MD, General Medicine</p>
+                    <p>Dr. Thomas-Christie brings expertise in holistic care with a focus on lifestyle changes. She is passionate about patient education and empowering individuals to take control of their health journey.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="testimonial-section section" id="testimonials">
+        <div class="container">
+            <h2 class="section-title">What Our Patients Say</h2>
+            <p class="section-subtitle">Hear from those who have experienced our care.</p>
+            <div class="testimonial-slider">
+                <div class="testimonial-slide active">
+                    <div class="card">
+                        <p>"The team at Trident Medical made me feel so comfortable during my visit. Dr. Powlett's expertise and kindness are unmatched!"</p>
+                        <div class="author">— Mel Brathwaite</div>
+                    </div>
+                </div>
+                <div class="testimonial-slide">
+                    <div class="card">
+                        <p>"I've been managing my diabetes with Dr. Thomas-Christie, and her guidance has truly changed my life for the better."</p>
+                        <div class="author">— John Mapp</div>
+                    </div>
+                </div>
+                <div class="testimonial-slide">
+                    <div class="card">
+                        <p>"Quick, professional service for my minor surgery. I highly recommend Trident Medical to everyone!"</p>
+                        <div class="author">— Emily Johnson</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slider-controls">
+                <button class="prev-btn">Previous</button>
+                <button class="next-btn">Next</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="services">
+        <div class="container">
+            <h2 class="section-title">Our Services</h2>
+            <p class="section-subtitle">Comprehensive care tailored to your needs.</p>
+            <div class="services-grid">
+                <div>
+                    <h3 class="service-header">General Checkups</h3>
+                    <div class="card">Routine Health Assessments</div>
+                    <div class="card">Preventive Care</div>
+                </div>
+                <div>
+                    <h3 class="service-header">Investigations</h3>
+                    <div class="card">Blood Testing</div>
+                    <div class="card">Pap Smears</div>
+                    <div class="card">Cancer Screenings</div>
+                </div>
+                <div>
+                    <h3 class="service-header">Minor Surgeries</h3>
+                    <div class="card">Suturing Lacerations</div>
+                    <div class="card">Incisions and Drainage</div>
+                </div>
+                <div>
+                    <h3 class="service-header">Chronic Disease Management</h3>
+                    <div class="card">Diabetes Management</div>
+                    <div class="card">Hypertension Care</div>
+                    <div class="card">Cholesterol Monitoring</div>
+                    <div class="card">CKD Management</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- New Medical Certificates Section -->
+    <section class="section" id="certificates" style="background-color: var(--light-bg);">
+        <div class="container">
+            <h2 class="section-title">Medical Certificates</h2>
+            <p class="section-subtitle">Professional medical certification services for work, school, travel, and licensing requirements.</p>
+            <div class="certificates-grid">
+                <div class="certificate-card">
+                    <h4>Back to School</h4>
+                    <p>Medical clearance certificates for school enrollment and sports participation.</p>
+                </div>
+                <div class="certificate-card">
+                    <h4>Health Certificates</h4>
+                    <p>General health fitness certificates for employment and immigration purposes.</p>
+                </div>
+                <div class="certificate-card">
+                    <h4>Food Badge</h4>
+                    <p>Medical certification for food handlers and restaurant workers compliance.</p>
+                </div>
+                <div class="certificate-card">
+                    <h4>Fit to Drive</h4>
+                    <p>Driving fitness assessments and medical clearance for license renewal.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="resources" style="background-color: var(--light-bg);">
+        <div class="container">
+            <h2 class="section-title">Patient Resources</h2>
+            <p class="section-subtitle">Access essential forms and resources to support your healthcare needs.</p>
+            <div class="resources-grid">
+                <div class="card">
+                    <h4>Adult Patient Form</h4>
+                    <a href="Adult-Form.pdf" class="btn btn-primary" download>Download PDF</a>
+                </div>
+                <div class="card">
+                    <h4>Child Patient Form</h4>
+                    <a href="Child-Form.pdf" class="btn btn-primary" download>Download PDF</a>
+                </div>
+                <div class="card" style="display: flex; align-items: center; justify-content: center;">
+                    <a href="Resources.html" class="btn btn-secondary">More Resources</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="appointments">
+        <div class="container">
+            <h2 class="section-title">Book an Appointment</h2>
+            <p class="section-subtitle">Schedule your appointment easily and quickly with our doctors.</p>
+            <div class="calendly-section">
+                <div class="calendly-inline-widget" 
+                     data-url="https://calendly.com/tridentmedical246"
+                     style="min-width:100%;height:700px;"></div>
+            </div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <p style="color: var(--text-light); max-width: 600px; margin: 0 auto;">
+                    Or contact us directly at <a href="tel:+12465379259" style="color: var(--primary-color); text-decoration: none;">(246) 537-9259</a> 
+                    to schedule your appointment.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="contact">
+        <div class="container">
+            <h2 class="section-title">Contact Us</h2>
+            <p class="section-subtitle">We're here to help. Get in touch with us today.</p>
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h3>Contact Information</h3>
+                    <div class="video-icon" id="videoIcon1">
+                        <i class="fas fa-video"></i>
+                        <span>Video Directions</span>
+                    </div>
+                    <div class="video-icon" id="videoIcon2">
+                        <i class="fas fa-video"></i>
+                        <span>2nd Video Directions</span>
+                    </div>
+                    <div class="card video-card hidden" id="videoCard">
+                        <h4 style="color: var(--secondary-color); margin-bottom: 1rem;">Video Directions</h4>
+                        <iframe src="https://www.youtube.com/embed/iuDshMjBWtw" 
+                                title="Trident Medical Video Directions 1" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen></iframe>
+                        <h4 style="color: var(--secondary-color); margin: 1rem 0;">Additional Video Directions</h4>
+                        <iframe src="https://www.youtube.com/embed/SRZA0BvnID8" 
+                                title="Trident Medical Video Directions 2" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen></iframe>
+                    </div>
+                    <p><strong>Address:</strong> 1 Sargeant's Village Tenantry Rd, Bridgetown, Christ Church, Barbados</p>
+                    <p><strong>Phone:</strong> (246) 537-9259</p>
+                    <p><strong>Email:</strong> tridentmedical246@gmail.com</p>
+                    <p><strong>Fax:</strong> (246) 456-7891</p>
+                </div>
+                <div class="office-hours">
+                    <h3>Office Hours</h3>
+                    <table>
+                        <tr><td>Monday - Friday</td><td>9:00 AM - 4:00 PM</td></tr>
+                        <tr><td>Saturday</td><td>9:00 AM - 1:00 PM</td></tr>
+                        <tr><td>Sunday</td><td>Closed</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="map-container" style="margin-top: 3rem;">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3817.714693134686!2d-59.57212538554858!3d13.07762699032692!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8c43b8f7f7f7f7f7%3A0x9c43b8f7f7f7f7f7!2s1+Sargeant%27s+Village+Tenantry+Rd%2C+Bridgetown%2C+Christ+Church%2C+Barbados!5e0!3m2!1sen!2sus!4v1635781234567!5m2!1sen!2sus" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+
+            <!-- Partnerships Section -->
+            <div class="partnerships-section" style="margin-top: 4rem;">
+                <h2 class="section-title">Our Partnerships</h2>
+                <p class="section-subtitle">Collaborating for comprehensive wellness: Integrating medical care with therapy and spa services.</p>
+                <div class="partnerships-grid">
+                    <div class="card partnership-card">
+                        <img src="islandtherapeutics.jpeg" alt="Island Therapeutics Logo">
+                        <h4>Island Therapeutics</h4>
+                        <p>Partnering with Island Therapeutics for advanced physical therapy and rehabilitation programs. Our patients receive seamless referrals for post-injury recovery and mobility enhancement, ensuring holistic healing.</p>
+                    </div>
+                    <div class="card partnership-card">
+                         <img src="renewspa.png" alt="Renew Spa Logo">
+                        <h4>Renew Spa</h4>
+                        <p>In collaboration with Renew Spa, we offer integrated wellness treatments including therapeutic massages and stress relief therapies. Complementing our medical services to promote overall well-being and relaxation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>About Trident Medical</h4>
+                    <p>Trident Medical is committed to providing exceptional healthcare services with compassion and expertise to patients of all ages.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a class="f-active" href="#home">Home</a></li>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a class="f-active" href="#services">Services</a></li>
+                        <li><a class="f-active" href="#certificates">Medical Certificates</a></li>
+                        <li><a class="f-active" href="#appointments">Book Appointment</a></li>
+                        <li><a href="Resources.html">Patient Resources</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a class="f-active" href="#">Privacy Policy (HIPAA)</a></li>
+                        <li><a class="f-active" href="#">Terms of Use</a></li>
+                        <li><a class="f-active" href="#">Accessibility</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li><a href="tel:+12465379259">(246) 537-9259</a></li>
+                        <li><a href="mailto:tridentmedical246@gmail.com">tridentmedical246@gmail.com</a></li>
+                        <li><a href="#contact">Directions</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Trident Medical. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile Navigation Toggle
+        const mobileNavToggle = document.getElementById('mobileNavToggle');
+        const nav = document.getElementById('mainNav');
+        const body = document.body;
+
+        mobileNavToggle.addEventListener('click', () => {
+            const isOpen = nav.classList.contains('active');
+            nav.classList.toggle('active');
+            mobileNavToggle.classList.toggle('active');
+            body.classList.toggle('nav-open');
+            mobileNavToggle.setAttribute('aria-expanded', !isOpen);
+        });
+
+        // Close mobile nav when clicking on a link
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (nav.classList.contains('active')) {
+                    nav.classList.remove('active');
+                    mobileNavToggle.classList.remove('active');
+                    body.classList.remove('nav-open');
+                    mobileNavToggle.setAttribute('aria-expanded', false);
+                }
+            });
+        });
+
+        // Smooth Scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Testimonial Slider
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.testimonial-slide');
+        const prevBtn = document.querySelector('.prev-btn');
+        const nextBtn = document.querySelector('.next-btn');
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) slide.classList.add('active');
+            });
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }
+
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+            showSlide(currentSlide);
+        }
+
+        nextBtn.addEventListener('click', nextSlide);
+        prevBtn.addEventListener('click', prevSlide);
+
+        // Auto-slide every 5 seconds
+        setInterval(nextSlide, 5000);
+
+        // Open Day Side Banner Toggle
+        const openDayToggle = document.getElementById('openDayToggle');
+        const openDayBanner = document.getElementById('openDayBanner');
+        const closeBanner = document.getElementById('closeBanner');
+
+        // Ensure banner is visible by default on all screens
+        openDayBanner.classList.remove('hidden');
+
+        openDayToggle.addEventListener('click', () => {
+            openDayBanner.classList.toggle('hidden');
+            const icon = openDayToggle.querySelector('i');
+            if (openDayBanner.classList.contains('hidden')) {
+                icon.className = 'fas fa-plus-circle';
+                openDayToggle.title = 'Show Open Day Banner';
+            } else {
+                icon.className = 'fas fa-times';
+                openDayToggle.title = 'Hide Open Day Banner';
+            }
+        });
+
+        closeBanner.addEventListener('click', () => {
+            openDayBanner.classList.add('hidden');
+            openDayToggle.querySelector('i').className = 'fas fa-plus-circle';
+            openDayToggle.title = 'Show Open Day Banner';
+        });
+
+        // Video Card Toggle
+        const videoIcon1 = document.getElementById('videoIcon1');
+        const videoIcon2 = document.getElementById('videoIcon2');
+        const videoCard = document.getElementById('videoCard');
+
+        videoIcon1.addEventListener('click', () => {
+            videoCard.classList.toggle('hidden');
+        });
+
+        videoIcon2.addEventListener('click', () => {
+            videoCard.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
