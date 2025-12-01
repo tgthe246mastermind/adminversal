@@ -1,46 +1,61 @@
-import { useState } from 'react'; 
+import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
+
 import Dashboard from './Dashboard.jsx';
 import Login from './Login.jsx';
-import Profile from './Profile.jsx'; // ✅ ADD THIS
+import Profile from './Profile.jsx';
+
+// Supabase client
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [session, setSession] = useState(null);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-    navigate('/dashboard');
-  };
+  // Load existing session on startup
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-  const handleSignUp = () => {
-    navigate('/login');
-  };
+    // Listen for login / logout changes
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => listener.subscription;
+  }, []);
 
   return (
-    <>
-      <Routes>
-        <Route 
-          path="/login" 
-          element={!isAuthenticated ? <Login onLogin={handleLogin} /> : <Navigate to="/dashboard" />} 
-        />
+    <Routes>
+      {/* LOGIN */}
+      <Route
+        path="/login"
+        element={!session ? <Login /> : <Navigate to="/dashboard" />}
+      />
 
-        <Route 
-          path="/dashboard" 
-          element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} 
-        />
+      {/* DASHBOARD */}
+      <Route
+        path="/dashboard"
+        element={session ? <Dashboard /> : <Navigate to="/login" />}
+      />
 
-        <Route 
-          path="/profile"                        // ✅ FIXED
-          element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} 
-        />
+      {/* PROFILE (Facebook OAuth returns here) */}
+      <Route
+        path="/profile"
+        element={session ? <Profile /> : <Navigate to="/login" />}
+      />
 
-        <Route 
-          path="/" 
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} 
-        />
-      </Routes>
-    </>
+      {/* DEFAULT ROOT */}
+      <Route
+        path="/"
+        element={<Navigate to={session ? "/dashboard" : "/login"} />}
+      />
+    </Routes>
   );
 }
 
