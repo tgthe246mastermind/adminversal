@@ -1,3 +1,4 @@
+// src/components/Profile.jsx
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Instagram, Facebook, AlertCircle, LogOut, Loader2 } from "lucide-react";
@@ -6,23 +7,6 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
-
-// Helper to build a *clean* backend OAuth callback URL
-function getFacebookRedirectUri() {
-  let base = import.meta.env.VITE_API_URL;
-
-  // If VITE_API_URL is missing or looks suspicious, fall back to the known-good URL
-  if (!base || typeof base !== 'string' || !base.startsWith('http')) {
-    base = 'https://adminversal-api.lancerforprofit246.workers.dev';
-  }
-
-  // Remove trailing slashes to avoid double slashes
-  base = base.replace(/\/+$/, '');
-
-  const redirectUri = `${base}/api/auth/facebook/callback`;
-  console.log('FB redirect_uri =>', redirectUri);
-  return redirectUri;
-}
 
 function Profile() {
     const [accounts, setAccounts] = useState([]);
@@ -79,14 +63,18 @@ function Profile() {
                         return;
                     }
 
-                    const res = await fetch('/api/auth/facebook/finalize', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${session.access_token}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ temp_id: tempId }),
-                    });
+                    // FIXED: Use backend API URL
+                    const res = await fetch(
+                        `${import.meta.env.VITE_API_URL}/api/auth/facebook/finalize`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${session.access_token}`,
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ temp_id: tempId }),
+                        }
+                    );
 
                     const result = await res.json();
 
@@ -109,16 +97,14 @@ function Profile() {
         fetchAccounts();
     }, []);
 
-    // Always use backend URL for OAuth callback
+    // FIXED: Always use backend URL for OAuth callback
     const handleFacebookLogin = () => {
         const state = crypto.randomUUID();
         sessionStorage.setItem('oauth_state', state);
 
-        const redirectUri = getFacebookRedirectUri();
-
         const params = new URLSearchParams({
             client_id: import.meta.env.VITE_FB_APP_ID,
-            redirect_uri: redirectUri,
+            redirect_uri: `${import.meta.env.VITE_API_URL}/api/auth/facebook/callback`,
             scope: 'pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,instagram_basic,instagram_content_publish,instagram_manage_messages,email',
             response_type: 'code',
             state,
@@ -136,12 +122,14 @@ function Profile() {
         if (!session) return;
 
         try {
-            const res = await fetch(`/api/auth/facebook/disconnect/${pageId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
-                },
-            });
+            // FIXED: Use backend API URL
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/auth/facebook/disconnect/${pageId}`,
+                {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${session.access_token}` },
+                }
+            );
 
             if (res.ok) {
                 setSuccess('Account disconnected.');
