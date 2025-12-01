@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import Dashboard from './Dashboard.jsx';
 import Login from './Login.jsx';
-import Profile from './components/Profile.jsx'; // ✅ ADD THIS
+import Profile from './Profile.jsx'; // ✅ ADD THIS
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
