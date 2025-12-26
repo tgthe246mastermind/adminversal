@@ -6,6 +6,7 @@ import Dashboard from './Dashboard.jsx';
 import Login from './Login.jsx';
 import Signup from './Signup.jsx';
 import Profile from './Profile.jsx';
+import AuthCallback from './AuthCallback.jsx';
 
 // Supabase client
 const supabase = createClient(
@@ -32,6 +33,12 @@ function App() {
 
   return (
     <Routes>
+      {/* AUTH CALLBACK (email confirm link lands here) */}
+      <Route
+        path="/auth/callback"
+        element={<AuthCallback />}
+      />
+
       {/* SIGNUP */}
       <Route
         path="/signup"
