@@ -16,9 +16,8 @@ function Profile() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-        console.error("Profile: No session found during fetchAccounts");
-        setLoading(false);
-        return;
+      setLoading(false);
+      return;
     }
 
     try {
@@ -36,25 +35,24 @@ function Profile() {
   };
 
   useEffect(() => {
-    const init = async () => {
+    const runFinalize = async () => {
       const params = new URLSearchParams(window.location.search);
       const tempId = params.get('fb_connect');
       const urlError = params.get('error');
 
-      console.log("Profile URL Check:", { tempId, urlError });
+      console.log("Profile Init Check:", { tempId, urlError });
 
       if (urlError) {
-        setError(`Worker Error: ${urlError}`);
+        setError(`Connection Error: ${urlError}`);
         return;
       }
 
       if (tempId) {
         setLoading(true);
-        console.log("Finalizing connection for ID:", tempId);
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          setError("Auth Error: You were logged out during redirect.");
+          setError("Auth Session Lost. Please log in again.");
           setLoading(false);
           return;
         }
@@ -71,37 +69,46 @@ function Profile() {
           const json = await res.json();
           if (!res.ok) throw new Error(json.error || "Finalize failed");
           
-          console.log("Finalize Success!");
           window.history.replaceState({}, '', '/profile');
           await fetchAccounts();
         } catch (err) {
-          setError(`Finalize Error: ${err.message}`);
+          setError(`Finalize Failed: ${err.message}`);
           setLoading(false);
         }
         return;
       }
       await fetchAccounts();
     };
-    init();
+    runFinalize();
   }, []);
-
-  const handleLogin = () => {
-    const params = new URLSearchParams({
-      client_id: import.meta.env.VITE_FB_APP_ID,
-      redirect_uri: `${API_BASE}/api/auth/facebook/callback`,
-      scope: 'pages_show_list,instagram_basic,email',
-      response_type: 'code'
-    });
-    window.location.href = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
-  };
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>Facebook Profile</h2>
-      {error && <div style={{ background: '#fee2e2', color: '#991b1b', padding: 10, marginBottom: 10 }}>{error}</div>}
-      <button onClick={handleLogin}>Connect Facebook</button>
-      <div style={{ marginTop: 20 }}>
-        {loading ? <p>Processing...</p> : accounts.map(a => <div key={a.id}>{a.name}</div>)}
+      <h2>Account Settings</h2>
+      {error && <div style={{ background: '#fee2e2', color: '#991b1b', padding: 12, borderRadius: 8, marginBottom: 15 }}>{error}</div>}
+      
+      <button 
+        onClick={() => {
+          const params = new URLSearchParams({
+            client_id: import.meta.env.VITE_FB_APP_ID,
+            redirect_uri: `${API_BASE}/api/auth/facebook/callback`,
+            scope: 'pages_show_list,instagram_basic,email',
+            response_type: 'code'
+          });
+          window.location.href = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
+        }}
+        style={{ padding: '10px 20px', cursor: 'pointer' }}
+      >
+        Connect Facebook Business
+      </button>
+
+      <div style={{ marginTop: 30 }}>
+        <h3>Your Connections</h3>
+        {loading ? <p>Syncing...</p> : accounts.map(a => (
+          <div key={a.id} style={{ border: '1px solid #ddd', padding: 10, marginBottom: 5 }}>
+            {a.name}
+          </div>
+        ))}
       </div>
     </div>
   );
