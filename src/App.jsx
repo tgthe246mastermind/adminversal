@@ -48,4 +48,6 @@ function App() {
   );
 }
 
+console.log("Current API Key in use:", import.meta.env.VITE_SUPABASE_ANON_KEY);
+
 export default App;
