@@ -9,282 +9,305 @@ const supabase = createClient(
 );
 
 function Profile() {
-    const [accounts, setAccounts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [connecting, setConnecting] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-    const fetchAccounts = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            setLoading(false);
-            return;
-        }
+  const API_BASE = import.meta.env.VITE_API_URL;
 
-        const { data, error } = await supabase
-            .from('connected_accounts')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('name', { ascending: true });
-
-        if (error) {
-            setError('Failed to load connected accounts');
-        } else {
-            setAccounts(data || []);
-        }
+  const fetchAccounts = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         setLoading(false);
-    };
+        return;
+      }
 
-    useEffect(() => {
-        console.log("DEBUG: VITE_API_URL =", import.meta.env.VITE_API_URL);
-        console.log("DEBUG: VITE_FB_APP_ID =", import.meta.env.VITE_FB_APP_ID);
-        console.log("DEBUG: VITE_SUPABASE_URL =", import.meta.env.VITE_SUPABASE_URL);
-        console.log("DEBUG: Full import.meta.env =", import.meta.env);
+      const { data, error } = await supabase
+        .from('connected_accounts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name', { ascending: true });
 
-        const handleFacebookCallback = async () => {
-            const params = new URLSearchParams(window.location.search);
-            const tempId = params.get('fb_connect');
-            const urlError = params.get('error');
+      if (error) {
+        setError('Failed to load connected accounts');
+      } else {
+        setAccounts(data || []);
+      }
+    } catch {
+      setError('Failed to load connected accounts');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            if (urlError) {
-                setError('Facebook login was cancelled or failed.');
-                window.history.replaceState({}, '', '/profile');
-                setLoading(false);
-                return;
-            }
+  // Handle callback from backend after FB OAuth
+  useEffect(() => {
+    const handleFacebookCallback = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const tempId = params.get('fb_connect');
+      const urlError = params.get('error');
 
-            if (tempId) {
-                setConnecting(true);
-                setError('');
-                setSuccess('');
+      // Optional (but recommended): if your backend forwards state back, validate it
+      const returnedState = params.get('state');
+      const expectedState = sessionStorage.getItem('oauth_state');
 
-                try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session) {
-                        setError('You must be logged in to connect accounts.');
-                        setConnecting(false);
-                        return;
-                    }
+      if (urlError) {
+        setError('Facebook login was cancelled or failed.');
+        window.history.replaceState({}, '', '/profile');
+        setLoading(false);
+        return;
+      }
 
-                    const res = await fetch('/api/auth/facebook/finalize', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${session.access_token}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ temp_id: tempId }),
-                    });
+      if (returnedState && expectedState && returnedState !== expectedState) {
+        setError('OAuth state mismatch. Please try connecting again.');
+        sessionStorage.removeItem('oauth_state');
+        window.history.replaceState({}, '', '/profile');
+        setLoading(false);
+        return;
+      }
 
-                    const result = await res.json();
-
-                    if (result.success) {
-                        setSuccess('Facebook & Instagram accounts connected successfully!');
-                        fetchAccounts();
-                    } else {
-                        setError(result.error || 'Failed to connect accounts.');
-                    }
-                } catch (err) {
-                    setError('Connection failed. Please try again.');
-                } finally {
-                    setConnecting(false);
-                    window.history.replaceState({}, '', '/profile');
-                }
-            }
-        };
-
-        handleFacebookCallback();
-        fetchAccounts();
-    }, []);
-
-    const handleFacebookLogin = () => {
-        const state = crypto.randomUUID();
-        sessionStorage.setItem('oauth_state', state);
-
-        const params = new URLSearchParams({
-            client_id: import.meta.env.VITE_FB_APP_ID,
-            redirect_uri: `${import.meta.env.VITE_API_URL}/api/auth/facebook/callback`,
-            scope: 'pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,instagram_basic,instagram_content_publish,instagram_manage_messages,email',
-            response_type: 'code',
-            state,
-            auth_type: 'rerequest'
-        });
-
-        window.location.href = `https://www.facebook.com/v24.0/dialog/oauth?${params}`;
-    };
-
-    const disconnect = async (pageId) => {
-        if (!confirm("Disconnect this account? All scheduled posts will stop.")) return;
-
+      if (tempId) {
+        setConnecting(true);
         setError('');
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+        setSuccess('');
 
         try {
-            const res = await fetch(`/api/auth/facebook/disconnect/${pageId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
-                },
-            });
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            setError('You must be logged in to connect accounts.');
+            setConnecting(false);
+            return;
+          }
 
-            if (res.ok) {
-                setSuccess('Account disconnected.');
-                fetchAccounts();
-            } else {
-                setError('Failed to disconnect account.');
-            }
-        } catch (err) {
-            setError('Network error. Try again.');
+          const res = await fetch(`${API_BASE}/api/auth/facebook/finalize`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ temp_id: tempId }),
+          });
+
+          const result = await res.json().catch(() => ({}));
+
+          if (res.ok && result.success) {
+            setSuccess('Facebook & Instagram accounts connected successfully!');
+            await fetchAccounts();
+          } else {
+            setError(result.error || `Failed to connect accounts (HTTP ${res.status}).`);
+          }
+        } catch {
+          setError('Connection failed. Please try again.');
+        } finally {
+          setConnecting(false);
+          sessionStorage.removeItem('oauth_state');
+          window.history.replaceState({}, '', '/profile');
         }
+      }
     };
 
-    return (
-        <div className="tab-content active" id="profile">
-            <div className="profile-container">
-                <div className="profile-header">
-                    <div className="profile-avatar-large">S</div>
-                    <div className="profile-info">
-                        <h2>Scarlett Johnson</h2>
-                        <div className="profile-username">@scarlett_j</div>
-                        <p className="profile-bio">Social Media Manager • Growing brands with automation</p>
-                    </div>
-                </div>
+    handleFacebookCallback();
+    fetchAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-                <div className="profile-sections">
-                    <div className="profile-section">
-                        <h3>Connected Facebook & Instagram Accounts</h3>
+  // Redirect user to FB dialog. Redirect back to BACKEND callback endpoint.
+  const handleFacebookLogin = () => {
+    const state = crypto.randomUUID();
+    sessionStorage.setItem('oauth_state', state);
 
-                        {success && (
-                            <div style={{
-                                padding: '1rem',
-                                background: '#d1fae5',
-                                color: '#065f46',
-                                borderRadius: '8px',
-                                marginBottom: '1rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                            }}>
-                                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                {success}
-                            </div>
-                        )}
+    const params = new URLSearchParams({
+      client_id: import.meta.env.VITE_FB_APP_ID,
+      redirect_uri: `${API_BASE}/api/auth/facebook/callback`,
+      scope: 'pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,instagram_basic,instagram_content_publish,instagram_manage_messages,email',
+      response_type: 'code',
+      state,
+      auth_type: 'rerequest'
+    });
 
-                        {error && (
-                            <div style={{
-                                padding: '1rem',
-                                background: '#fee2e2',
-                                color: '#991b1b',
-                                borderRadius: '8px',
-                                marginBottom: '1rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                            }}>
-                                <AlertCircle size={18} />
-                                {error}
-                            </div>
-                        )}
+    window.location.href = `https://www.facebook.com/v24.0/dialog/oauth?${params}`;
+  };
 
-                        <button
-                            onClick={handleFacebookLogin}
-                            disabled={connecting}
-                            className="btn btn-primary"
-                            style={{
-                                marginBottom: '1.5rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                opacity: connecting ? 0.7 : 1
-                            }}
-                        >
-                            {connecting ? (
-                                <>
-                                    <Loader2 size={20} className="animate-spin" />
-                                    Connecting...
-                                </>
-                            ) : (
-                                <>
-                                    <Facebook size={20} />
-                                    Connect Facebook / Instagram Business
-                                </>
-                            )}
-                        </button>
+  const disconnect = async (pageId) => {
+    if (!confirm("Disconnect this account? All scheduled posts will stop.")) return;
 
-                        {loading ? (
-                            <p><Loader2 size={18} className="animate-spin inline" /> Loading accounts...</p>
-                        ) : accounts.length === 0 ? (
-                            <p style={{ color: '#64748b', fontStyle: 'italic' }}>
-                                No accounts connected yet. Click the button above to connect your Facebook Pages and Instagram Business accounts.
-                            </p>
-                        ) : (
-                            <div className="social-accounts">
-                                {accounts.map(acc => (
-                                    <div
-                                        key={acc.id}
-                                        className="social-account"
-                                        style={{
-                                            padding: '1rem',
-                                            background: '#f8fafc',
-                                            borderRadius: '8px',
-                                            marginBottom: '0.75rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-                                            {acc.picture ? (
-                                                <img
-                                                    src={acc.picture}
-                                                    alt={acc.name}
-                                                    width={48}
-                                                    height={48}
-                                                    style={{ borderRadius: '50%', objectFit: 'cover' }}
-                                                />
-                                            ) : acc.instagram_username ? (
-                                                <Instagram size={48} color="#E4405F" />
-                                            ) : (
-                                                <Facebook size={48} color="#1877F2" />
-                                            )}
-                                            <div>
-                                                <strong>{acc.name}</strong><br />
-                                                <small style={{ color: '#64748b' }}>
-                                                    {acc.instagram_username ? (
-                                                        <>@{acc.instagram_username} (Instagram Business)</>
-                                                    ) : (
-                                                        <>Facebook Page • {acc.category || 'Uncategorized'}</>
-                                                    )}
-                                                </small>
-                                            </div>
-                                        </div>
+    setError('');
+    setSuccess('');
 
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span className="status connected">Active</span>
-                                            <button
-                                                onClick={() => disconnect(acc.facebook_page_id)}
-                                                className="btn btn-secondary"
-                                                style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                                            >
-                                                <LogOut size={14} /> Disconnect
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setError('You must be logged in.');
+      return;
+    }
 
-                <div className="profile-actions">
-                    <button className="btn btn-primary">Save Profile</button>
-                </div>
-            </div>
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/facebook/disconnect/${pageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (res.ok) {
+        setSuccess('Account disconnected.');
+        fetchAccounts();
+      } else {
+        setError(`Failed to disconnect account (HTTP ${res.status}).`);
+      }
+    } catch {
+      setError('Network error. Try again.');
+    }
+  };
+
+  return (
+    <div className="tab-content active" id="profile">
+      <div className="profile-container">
+        <div className="profile-header">
+          <div className="profile-avatar-large">S</div>
+          <div className="profile-info">
+            <h2>Scarlett Johnson</h2>
+            <div className="profile-username">@scarlett_j</div>
+            <p className="profile-bio">Social Media Manager • Growing brands with automation</p>
+          </div>
         </div>
-    );
+
+        <div className="profile-sections">
+          <div className="profile-section">
+            <h3>Connected Facebook & Instagram Accounts</h3>
+
+            {success && (
+              <div style={{
+                padding: '1rem',
+                background: '#d1fae5',
+                color: '#065f46',
+                borderRadius: '8px',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                {success}
+              </div>
+            )}
+
+            {error && (
+              <div style={{
+                padding: '1rem',
+                background: '#fee2e2',
+                color: '#991b1b',
+                borderRadius: '8px',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <AlertCircle size={18} />
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleFacebookLogin}
+              disabled={connecting}
+              className="btn btn-primary"
+              style={{
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                opacity: connecting ? 0.7 : 1
+              }}
+            >
+              {connecting ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Facebook size={20} />
+                  Connect Facebook / Instagram Business
+                </>
+              )}
+            </button>
+
+            {loading ? (
+              <p><Loader2 size={18} className="animate-spin inline" /> Loading accounts...</p>
+            ) : accounts.length === 0 ? (
+              <p style={{ color: '#64748b', fontStyle: 'italic' }}>
+                No accounts connected yet. Click the button above to connect your Facebook Pages and Instagram Business accounts.
+              </p>
+            ) : (
+              <div className="social-accounts">
+                {accounts.map(acc => (
+                  <div
+                    key={acc.id}
+                    className="social-account"
+                    style={{
+                      padding: '1rem',
+                      background: '#f8fafc',
+                      borderRadius: '8px',
+                      marginBottom: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                      {acc.picture ? (
+                        <img
+                          src={acc.picture}
+                          alt={acc.name}
+                          width={48}
+                          height={48}
+                          style={{ borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                      ) : acc.instagram_username ? (
+                        <Instagram size={48} color="#E4405F" />
+                      ) : (
+                        <Facebook size={48} color="#1877F2" />
+                      )}
+                      <div>
+                        <strong>{acc.name}</strong><br />
+                        <small style={{ color: '#64748b' }}>
+                          {acc.instagram_username ? (
+                            <>@{acc.instagram_username} (Instagram Business)</>
+                          ) : (
+                            <>Facebook Page • {acc.category || 'Uncategorized'}</>
+                          )}
+                        </small>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="status connected">Active</span>
+                      <button
+                        onClick={() => disconnect(acc.facebook_page_id)}
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                      >
+                        <LogOut size={14} /> Disconnect
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="profile-actions">
+          <button className="btn btn-primary">Save Profile</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default Profile;
