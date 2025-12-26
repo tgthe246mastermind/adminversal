@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -9,27 +9,28 @@ const supabase = createClient(
 
 export default function AuthCallback() {
   const [done, setDone] = useState(false);
-  const [targetPath, setTargetPath] = useState("/dashboard");
+  const [target, setTarget] = useState("/dashboard");
+  const location = useLocation();
 
   useEffect(() => {
     (async () => {
-      // 1. Process the Supabase session
+      // Allow Supabase to finish its session handling
       await supabase.auth.getSession();
 
-      // 2. Check if we need to preserve Facebook connection parameters
-      const params = new URLSearchParams(window.location.search);
+      // Check if we are in the middle of a Facebook connection
+      const params = new URLSearchParams(location.search);
       if (params.has('fb_connect')) {
-        setTargetPath(`/profile${window.location.search}`);
+        // Redirect to Profile with the parameters intact
+        setTarget(`/profile${location.search}`);
       } else {
-        setTargetPath("/dashboard");
+        setTarget("/dashboard");
       }
-
+      
       setDone(true);
     })();
-  }, []);
+  }, [location]);
 
-  if (!done) return <div style={{ padding: 20 }}>Signing you in...</div>;
-  
-  // Navigate to the smart target path instead of always /dashboard
-  return <Navigate to={targetPath} replace />;
+  if (!done) return <div style={{ padding: 20 }}>Syncing session...</div>;
+
+  return <Navigate to={target} replace />;
 }
