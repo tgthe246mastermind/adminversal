@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 
 import Dashboard from './Dashboard.jsx';
 import Login from './Login.jsx';
 import Signup from './Signup.jsx';
 import Profile from './Profile.jsx';
-import AuthCallback from './AuthCallback.jsx';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -15,11 +14,13 @@ const supabase = createClient(
 
 function App() {
   const [session, setSession] = useState(null);
-  const location = useLocation();
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
+    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setInitializing(false);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -29,44 +30,20 @@ function App() {
     return () => listener.subscription;
   }, []);
 
+  if (initializing) return <div style={{ padding: 20 }}>Initializing App...</div>;
+
   return (
     <Routes>
-      <Route path="/auth/callback" element={<AuthCallback />} />
+      {/* NO REDIRECTS: This forces the app to render whatever the URL says.
+        If the Worker sends you to /profile?fb_connect=..., you WILL land there.
+      */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/profile" element={<Profile />} />
       
-      {/* AUTH PROTECTED ROUTES */}
-      <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/dashboard" />} />
-      <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
-      <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/login" />} />
-      <Route path="/profile" element={session ? <Profile /> : <Navigate to="/login" />} />
-
-      {/* ⚠️ THE FIX: Smart Redirect for Root Path ⚠️ */}
-      <Route
-        path="/"
-        element={
-          session ? (
-            // If the URL has fb_connect, preserve the search params and go to profile
-            window.location.search.includes('fb_connect') 
-              ? <Navigate to={`/profile${window.location.search}`} replace /> 
-              : <Navigate to="/dashboard" replace />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-
-      {/* Catch-all: Ensure we don't drop params on invalid routes */}
-      <Route 
-        path="*" 
-        element={
-          session ? (
-            window.location.search.includes('fb_connect') 
-              ? <Navigate to={`/profile${window.location.search}`} replace /> 
-              : <Navigate to="/dashboard" replace />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
+      {/* Basic Root */}
+      <Route path="/" element={session ? <Dashboard /> : <Login />} />
     </Routes>
   );
 }
