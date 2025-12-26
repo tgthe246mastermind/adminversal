@@ -1,9 +1,8 @@
-// src/components/Signup.jsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -16,24 +15,25 @@ function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
+  const [info, setInfo] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setNotice('');
+    setInfo('');
 
     if (!email || !password) {
       setError('Please enter an email and password.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
     if (password !== confirmPassword) {
@@ -43,33 +43,29 @@ function Signup() {
 
     setIsLoading(true);
     try {
-      // IMPORTANT: use your deployed Pages URL here for email confirmations
-      // If you have email confirmations OFF, Supabase returns a session immediately and this still works.
-      const emailRedirectTo = `${window.location.origin}/dashboard`;
+      const emailRedirectTo = `${window.location.origin}/login`;
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo,
-        },
+        options: { emailRedirectTo },
       });
 
       if (error) {
-        setError(error.message || 'Signup failed.');
+        setError(error.message || 'Signup failed');
         return;
       }
 
-      // If confirmations are OFF, session will exist immediately
+      // If email confirmations are ON, session is usually null until user clicks the email link.
       if (data?.session) {
         navigate('/dashboard', { replace: true });
         return;
       }
 
-      // If confirmations are ON, no session yet
-      setNotice('Account created! Please check your email to confirm your account, then log in.');
-      // You can optionally auto-send them to login after a moment:
-      // setTimeout(() => navigate('/login'), 1200);
+      setInfo('✅ Account created. Please check your email to confirm your address, then log in.');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
     } catch {
       setError('Signup failed. Please try again.');
     } finally {
@@ -116,7 +112,7 @@ function Signup() {
           margin: 0 auto 1rem;
           color: white;
           font-size: 1.5rem;
-          font-weight: 600;
+          font-weight: 700;
         }
 
         .auth-title {
@@ -128,13 +124,13 @@ function Signup() {
 
         .auth-subtitle {
           color: #64748b;
-          margin-bottom: 2rem;
+          margin-bottom: 0.5rem;
         }
 
         .auth-form {
           display: flex;
           flex-direction: column;
-          gap: 1.2rem;
+          gap: 1.25rem;
         }
 
         .form-group {
@@ -180,24 +176,22 @@ function Signup() {
           border: none;
         }
 
-        .error-message {
-          color: #991b1b;
-          background: #fee2e2;
-          border: 1px solid #fecaca;
-          font-size: 0.9rem;
-          text-align: center;
-          padding: 0.75rem;
+        .info-message {
+          padding: 0.85rem 1rem;
+          background: #d1fae5;
+          color: #065f46;
           border-radius: 12px;
+          font-size: 0.95rem;
+          text-align: center;
         }
 
-        .notice-message {
-          color: #065f46;
-          background: #d1fae5;
-          border: 1px solid #a7f3d0;
-          font-size: 0.9rem;
-          text-align: center;
-          padding: 0.75rem;
+        .error-message {
+          padding: 0.85rem 1rem;
+          background: #fee2e2;
+          color: #991b1b;
           border-radius: 12px;
+          font-size: 0.95rem;
+          text-align: center;
         }
 
         .submit-button {
@@ -214,6 +208,7 @@ function Signup() {
           justify-content: center;
           gap: 0.5rem;
           transition: all 0.3s ease;
+          margin-top: 0.25rem;
         }
 
         .submit-button:hover:not(:disabled) {
@@ -228,7 +223,7 @@ function Signup() {
 
         .auth-footer {
           text-align: center;
-          margin-top: 1.5rem;
+          margin-top: 1.25rem;
           color: #64748b;
         }
 
@@ -245,7 +240,7 @@ function Signup() {
         .loading-spinner {
           width: 20px;
           height: 20px;
-          border: 2px solid rgba(255, 255, 255, 0.35);
+          border: 2px solid rgba(255, 255, 255, 0.3);
           border-top: 2px solid white;
           border-radius: 50%;
           animation: spin 1s linear infinite;
@@ -266,86 +261,80 @@ function Signup() {
           }
           .form-input {
             padding: 0.75rem 2rem 0.75rem 2rem;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
           }
         }
       `}</style>
 
-      <div className="auth-container">
+      <motion.div
+        className="auth-container"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="auth-header">
-          <div className="auth-logo">
-            <UserPlus size={22} />
-          </div>
+          <div className="auth-logo">A</div>
           <h1 className="auth-title">Create Account</h1>
           <p className="auth-subtitle">Start using AdminVersal in minutes</p>
         </div>
+
+        {info && <div className="info-message">{info}</div>}
+        {error && <div className="error-message">{error}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <Mail className="input-icon" size={20} />
             <input
-              type="email"
               className="form-input"
+              type="email"
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
-              required
             />
           </div>
 
           <div className="form-group">
             <Lock className="input-icon" size={20} />
             <input
-              type={showPassword ? 'text' : 'password'}
               className="form-input"
-              placeholder="Password (min 6 characters)"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password (8+ characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
-              required
             />
             <button
               type="button"
               className="password-toggle"
               onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label="Toggle password visibility"
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
           <div className="form-group">
             <Lock className="input-icon" size={20} />
             <input
-              type={showConfirm ? 'text' : 'password'}
               className="form-input"
+              type={showConfirm ? 'text' : 'password'}
               placeholder="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               autoComplete="new-password"
-              required
             />
             <button
               type="button"
               className="password-toggle"
               onClick={() => setShowConfirm((v) => !v)}
-              aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
+              aria-label="Toggle confirm password visibility"
             >
-              {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
-          {error && <div className="error-message">{error}</div>}
-          {notice && <div className="notice-message">{notice}</div>}
-
-          <motion.button
-            type="submit"
-            className="submit-button"
-            disabled={isLoading}
-            whileHover={isLoading ? {} : { scale: 1.02 }}
-            whileTap={isLoading ? {} : { scale: 0.98 }}
-          >
+          <button className="submit-button" type="submit" disabled={isLoading}>
             {isLoading ? (
               <>
                 <div className="loading-spinner" />
@@ -353,27 +342,21 @@ function Signup() {
               </>
             ) : (
               <>
-                <ArrowRight size={20} />
-                Sign Up
+                <UserPlus size={18} />
+                Sign up
+                <ArrowRight size={18} />
               </>
             )}
-          </motion.button>
+          </button>
         </form>
 
         <div className="auth-footer">
           Already have an account?{' '}
-          <a
-            href="/login"
-            className="auth-link"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/login');
-            }}
-          >
-            Log in
-          </a>
+          <Link className="auth-link" to="/login">
+            Sign in
+          </Link>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
