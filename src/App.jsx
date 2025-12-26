@@ -32,28 +32,41 @@ function App() {
   return (
     <Routes>
       <Route path="/auth/callback" element={<AuthCallback />} />
+      
+      {/* AUTH PROTECTED ROUTES */}
       <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/dashboard" />} />
       <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
-      
-      {/* PROTECTED ROUTES */}
       <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/login" />} />
       <Route path="/profile" element={session ? <Profile /> : <Navigate to="/login" />} />
 
-      {/* SMART ROOT REDIRECT: Prevents losing FB params */}
+      {/* ⚠️ THE FIX: Smart Redirect for Root Path ⚠️ */}
       <Route
         path="/"
         element={
           session ? (
-            // If URL has Facebook params, don't hijack the user to dashboard
+            // If the URL has fb_connect, preserve the search params and go to profile
             window.location.search.includes('fb_connect') 
-              ? <Navigate to={`/profile${window.location.search}`} /> 
-              : <Navigate to="/dashboard" />
+              ? <Navigate to={`/profile${window.location.search}`} replace /> 
+              : <Navigate to="/dashboard" replace />
           ) : (
-            <Navigate to="/login" />
+            <Navigate to="/login" replace />
           )
         }
       />
-      <Route path="*" element={<Navigate to={session ? "/dashboard" : "/login"} />} />
+
+      {/* Catch-all: Ensure we don't drop params on invalid routes */}
+      <Route 
+        path="*" 
+        element={
+          session ? (
+            window.location.search.includes('fb_connect') 
+              ? <Navigate to={`/profile${window.location.search}`} replace /> 
+              : <Navigate to="/dashboard" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        } 
+      />
     </Routes>
   );
 }
