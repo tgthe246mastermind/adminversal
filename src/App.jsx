@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 
 import Dashboard from './Dashboard.jsx';
 import Login from './Login.jsx';
+import Signup from './Signup.jsx';
 import Profile from './Profile.jsx';
 
 // Supabase client
@@ -14,7 +15,6 @@ const supabase = createClient(
 
 function App() {
   const [session, setSession] = useState(null);
-  const navigate = useNavigate();
 
   // Load existing session on startup
   useEffect(() => {
@@ -32,6 +32,12 @@ function App() {
 
   return (
     <Routes>
+      {/* SIGNUP */}
+      <Route
+        path="/signup"
+        element={!session ? <Signup /> : <Navigate to="/dashboard" />}
+      />
+
       {/* LOGIN */}
       <Route
         path="/login"
@@ -53,6 +59,12 @@ function App() {
       {/* DEFAULT ROOT */}
       <Route
         path="/"
+        element={<Navigate to={session ? "/dashboard" : "/login"} />}
+      />
+
+      {/* OPTIONAL: catch-all */}
+      <Route
+        path="*"
         element={<Navigate to={session ? "/dashboard" : "/login"} />}
       />
     </Routes>
