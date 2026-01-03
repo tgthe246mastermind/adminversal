@@ -1,9 +1,10 @@
 // src/components/Profile.jsx
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Instagram, Twitter, Linkedin, Youtube, Facebook, Loader2, AlertCircle, Info, LogOut } from "lucide-react";
+import { Instagram, Twitter, Linkedin, Youtube, Loader2, AlertCircle, Info } from "lucide-react";
 
 // Initialize Supabase Client
+// Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are in your .env file
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -12,20 +13,19 @@ const supabase = createClient(
 function Profile() {
     const API_BASE = import.meta.env.VITE_API_URL;
 
-    // UI State for the specific static list
+    // UI State: Your original list structure
     const [socialAccounts, setSocialAccounts] = useState([
         { platform: 'Instagram', handle: 'Not Connected', status: 'disconnected', icon: Instagram, color: '#E4405F' },
-        { platform: 'Twitter', handle: '@scarlettj', status: 'disconnected', icon: Twitter, color: '#1DA1F2' },
-        { platform: 'LinkedIn', handle: 'scarlett-johnson', status: 'disconnected', icon: Linkedin, color: '#0A66C2' },
+        { platform: 'Twitter', handle: '@scarlettj', status: 'connected', icon: Twitter, color: '#1DA1F2' },
+        { platform: 'LinkedIn', handle: 'scarlett-johnson', status: 'connected', icon: Linkedin, color: '#0A66C2' },
         { platform: 'YouTube', handle: 'ScarCreative', status: 'disconnected', icon: Youtube, color: '#FF0000' }
     ]);
 
-    // Functional State (Backend Data)
-    const [realAccounts, setRealAccounts] = useState([]); // Stores actual DB data
+    // Logic State: Handling the backend connection
     const [loading, setLoading] = useState(true);
     const [connecting, setConnecting] = useState(false);
     const [error, setError] = useState('');
-    const [warning, setWarning] = useState(''); // For "0 Pages Found" case
+    const [warning, setWarning] = useState(''); // Specific state for "0 Pages Found"
     const [success, setSuccess] = useState('');
 
     // 1. Fetch real connected accounts from Supabase
@@ -42,13 +42,19 @@ function Profile() {
             .eq('user_id', user.id);
 
         if (!error && data) {
-            setRealAccounts(data);
-            
-            // Update the UI list to show "Connected" if we have data
+            // Update the UI list: If we have real FB/IG data, update the Instagram row
             if (data.length > 0) {
+                const realPageName = data[0].name; // Use the first connected page name
                 setSocialAccounts(prev => prev.map(acc => 
                     acc.platform === 'Instagram' 
-                    ? { ...acc, status: 'connected', handle: data[0].name } // Show first page name
+                    ? { ...acc, status: 'connected', handle: realPageName } 
+                    : acc
+                ));
+            } else {
+                // Reset if no data found
+                setSocialAccounts(prev => prev.map(acc => 
+                    acc.platform === 'Instagram' 
+                    ? { ...acc, status: 'disconnected', handle: 'Not Connected' } 
                     : acc
                 ));
             }
@@ -91,12 +97,11 @@ function Profile() {
 
                     if (!res.ok) throw new Error(result.error || 'Finalize failed');
 
-                    // CRITICAL FIX: Check if pages were actually found
-                    // If success is true but details (pages list) is empty, warn the user.
+                    // CRITICAL LOGIC: Check if pages were actually found
                     if (result.success && result.details && result.details.length === 0) {
                         setWarning('Login successful, but no Pages were found. Please try again and click "Edit Settings" to select your pages.');
                     } else if (result.success) {
-                        setSuccess('Accounts connected successfully!');
+                        setSuccess('Facebook/Instagram connected successfully!');
                         fetchAccounts();
                     } else {
                         setError(result.error || 'Failed to connect.');
@@ -132,22 +137,38 @@ function Profile() {
         window.location.href = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
     };
 
-    const handleDisconnect = async (platform) => {
-        if (platform !== 'Instagram') {
-            alert("Demo only: This platform is not wired to the backend yet.");
+    const handleToggleConnection = async (platform) => {
+        // Logic for Instagram (Real Backend)
+        if (platform === 'Instagram') {
+            const account = socialAccounts.find(acc => acc.platform === 'Instagram');
+            if (account.status === 'disconnected') {
+                handleMetaLogin();
+            } else {
+                if (confirm("Disconnect Instagram/Facebook account?")) {
+                    // Optimistic UI update
+                    setSocialAccounts(prev => prev.map(acc => 
+                        acc.platform === 'Instagram' ? { ...acc, status: 'disconnected', handle: 'Not Connected' } : acc
+                    ));
+                    // Ideally call backend API to disconnect here
+                }
+            }
             return;
         }
 
-        if (!confirm("Disconnect all Facebook/Instagram accounts?")) return;
-        
-        // Optimistic UI update
-        setSocialAccounts(prev => prev.map(acc => 
-            acc.platform === 'Instagram' ? { ...acc, status: 'disconnected', handle: 'Not Connected' } : acc
-        ));
-        setRealAccounts([]);
+        // Logic for other platforms (Demo/Mock)
+        const confirmed = window.confirm(
+            `Are you sure you want to disconnect your ${platform} account?`
+        );
 
-        // You would typically call a backend DELETE endpoint here
-        // await fetch(`${API_BASE}/api/auth/facebook/disconnect`, ...);
+        if (confirmed) {
+            setSocialAccounts(prevAccounts =>
+                prevAccounts.map(account =>
+                    account.platform === platform
+                        ? { ...account, status: 'disconnected' }
+                        : account
+                )
+            );
+        }
     };
 
     return (
@@ -161,7 +182,7 @@ function Profile() {
                         <p className="profile-bio">Social Media Strategist & Content Creator. Helping brands grow their online presence through data-driven insights.</p>
                     </div>
                 </div>
-
+                
                 <div className="profile-stats">
                     <div className="profile-stat">
                         <div className="stat-value">127</div>
@@ -181,11 +202,11 @@ function Profile() {
                     </div>
                 </div>
 
-                {/* Status Messages Area */}
+                {/* ALERTS SECTION (Injected into your UI) */}
                 <div style={{ padding: '0 2rem' }}>
                     {warning && (
-                        <div style={{ padding: '1rem', background: '#fff7ed', color: '#c2410c', borderRadius: '8px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Info size={18} /> {warning}
+                        <div style={{ padding: '1rem', background: '#fff7ed', color: '#c2410c', border: '1px solid #ffedd5', borderRadius: '8px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Info size={18} /> <strong>Check Permissions:</strong> {warning}
                         </div>
                     )}
                     {error && (
@@ -234,17 +255,7 @@ function Profile() {
                                     
                                     <button
                                         className="btn btn-secondary"
-                                        onClick={() => {
-                                            if (account.status === 'connected') {
-                                                handleDisconnect(account.platform);
-                                            } else {
-                                                if (account.platform === 'Instagram') {
-                                                    handleMetaLogin();
-                                                } else {
-                                                    alert("Integration coming soon!");
-                                                }
-                                            }
-                                        }}
+                                        onClick={() => handleToggleConnection(account.platform)}
                                         disabled={connecting && account.platform === 'Instagram'}
                                         style={{ marginLeft: '0.5rem', padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
                                     >
@@ -257,21 +268,6 @@ function Profile() {
                                 </div>
                             ))}
                         </div>
-
-                        {/* Real connected pages list (from DB) */}
-                        {realAccounts.length > 0 && (
-                            <div style={{ marginTop: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
-                                <small style={{ color: '#64748b', fontWeight: 'bold' }}>Active Data Connections:</small>
-                                <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-                                    {realAccounts.map(acc => (
-                                        <li key={acc.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div>
-                                            {acc.name} ({acc.instagram_username ? 'IG Business' : 'FB Page'})
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
                     </div>
                 </div>
                 
