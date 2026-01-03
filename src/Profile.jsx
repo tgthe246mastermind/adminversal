@@ -89,7 +89,8 @@ function Profile() {
     const params = new URLSearchParams({
       client_id: import.meta.env.VITE_FB_APP_ID,
       redirect_uri: `${API_BASE}/api/auth/facebook/callback`,
-      scope: 'pages_show_list,instagram_basic,email',
+      // Added 'business_management' to fix the (#100) permission error in logs
+      scope: 'pages_show_list,instagram_basic,email,business_management',
       response_type: 'code'
     });
     window.location.href = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
