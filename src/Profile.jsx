@@ -16,12 +16,8 @@ function Profile() {
     setLoading(true);
     setError("");
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      console.error("Profile: No session found during fetchAccounts");
       setLoading(false);
       return;
     }
@@ -30,10 +26,8 @@ function Profile() {
       const res = await fetch(`${API_BASE}/api/auth/facebook/accounts`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-
       setAccounts(json.accounts || []);
     } catch (err) {
       setError(`Load Error: ${err.message}`);
@@ -48,8 +42,6 @@ function Profile() {
       const tempId = params.get("fb_connect");
       const urlError = params.get("error");
 
-      console.log("Profile URL Check:", { tempId, urlError });
-
       if (urlError) {
         setError(`Worker Error: ${urlError}`);
         setLoading(false);
@@ -58,12 +50,7 @@ function Profile() {
 
       if (tempId) {
         setLoading(true);
-        console.log("Finalizing connection for ID:", tempId);
-
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
+        const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           setError("Auth Error: You were logged out during redirect.");
           setLoading(false);
@@ -79,11 +66,8 @@ function Profile() {
             },
             body: JSON.stringify({ temp_id: tempId }),
           });
-
           const json = await res.json();
           if (!res.ok) throw new Error(json.error || "Finalize failed");
-
-          console.log("Finalize Success!");
           window.history.replaceState({}, "", "/profile");
           await fetchAccounts();
         } catch (err) {
@@ -103,7 +87,6 @@ function Profile() {
     const params = new URLSearchParams({
       client_id: import.meta.env.VITE_FB_APP_ID,
       redirect_uri: `${API_BASE}/api/auth/facebook/callback`,
-      // Added 'business_management' to fix the (#100) permission error in logs
       scope: "pages_show_list,instagram_basic,email,business_management",
       response_type: "code",
     });
@@ -111,9 +94,7 @@ function Profile() {
     window.location.href = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
   };
 
-  // Helper to support either:
-  // a.picture = "https://..."
-  // or Facebook-style: a.picture.data.url = "https://..."
+  // Supports both string URL or FB-style picture.data.url
   const getPictureUrl = (a) => {
     if (!a) return "";
     if (typeof a.picture === "string") return a.picture;
@@ -143,43 +124,32 @@ function Profile() {
       <div style={{ marginTop: 20 }}>
         {loading && <p>Processing...</p>}
 
-        {!loading && accounts.length === 0 && !error && (
-          <p style={{ opacity: 0.75 }}>No connected accounts yet.</p>
-        )}
-
         {!loading &&
           accounts.map((a) => (
-            <div
-              key={a.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: 12,
-                borderRadius: 12,
-                background: "#f5f3ff",
-                marginBottom: 10,
-              }}
-            >
-              {/* 2. Place connect_accounts.picture where the purple profile picture is */}
-              <img
-                src={getPictureUrl(a)}
-                alt={a.name || "Connected Account"}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  background: "#7c3aed", // purple fallback
-                }}
-                onError={(e) => {
-                  // if image fails, keep purple background and hide broken image icon
-                  e.currentTarget.src = "";
-                }}
-              />
+            <div key={a.id} className="user-profile">
+              {/* Avatar */}
+              <div className="avatar">
+                {getPictureUrl(a) ? (
+                  <img
+                    src={getPictureUrl(a)}
+                    alt={a.name}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.remove();
+                    }}
+                  />
+                ) : (
+                  (a.name || "?")[0]
+                )}
+              </div>
 
-              {/* 1. Place connect_accounts.name where Scarlett is */}
-              <div style={{ fontWeight: 600 }}>{a.name || "Unnamed"}</div>
+              {/* Name */}
+              <span>{a.name}</span>
             </div>
           ))}
       </div>
