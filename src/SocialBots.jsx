@@ -2,16 +2,11 @@ import React, { useMemo, useRef, useState } from "react";
 import { Instagram, Facebook, Upload } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTiktok } from "@fortawesome/free-brands-svg-icons";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "./lib/supabaseClient";
 
 /* ============================================================
-   Supabase Client (frontend)
+   UI Icons
 ============================================================ */
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
-
 const PlatformIcon = ({ platform }) => {
   switch (platform) {
     case "Instagram":
@@ -32,46 +27,37 @@ const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 const availableTimes = ["9:00 AM", "12:00 PM", "3:00 PM", "6:00 PM", "8:00 PM"];
 
 function dayIndex(dayName) {
-  // JS: Sunday=0 ... Saturday=6
-  // Our list: Monday..Sunday
   const map = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
   return map[dayName];
 }
 
 function parseTimeLabel(label) {
-  // "9:00 AM" -> { hours: 9, minutes: 0 }
   const m = String(label).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   if (!m) return { hours: 9, minutes: 0 };
   let h = parseInt(m[1], 10);
   const minutes = parseInt(m[2], 10);
   const ampm = m[3].toUpperCase();
-
   if (ampm === "PM" && h !== 12) h += 12;
   if (ampm === "AM" && h === 12) h = 0;
   return { hours: h, minutes };
 }
 
 function nextOccurrenceISO(dayName, timeLabel) {
-  // Next upcoming dayName at timeLabel in local browser time
   const targetDow = dayIndex(dayName);
   const { hours, minutes } = parseTimeLabel(timeLabel);
 
   const now = new Date();
   const candidate = new Date(now);
 
-  // start from today
   candidate.setSeconds(0, 0);
   candidate.setHours(hours, minutes, 0, 0);
 
-  const todayDow = now.getDay(); // Sunday=0..Saturday=6
+  const todayDow = now.getDay();
   let delta = targetDow - todayDow;
   if (delta < 0) delta += 7;
-
-  // If same day but time already passed, move to next week
   if (delta === 0 && candidate.getTime() <= now.getTime()) delta = 7;
 
   candidate.setDate(now.getDate() + delta);
-
   return candidate.toISOString();
 }
 
@@ -90,21 +76,16 @@ function extFromFile(file) {
   return "jpg";
 }
 
-/* ============================================================
-   Component
-============================================================ */
 export default function SocialBots() {
   const API_BASE = import.meta.env.VITE_API_URL;
 
   const platforms = ["Instagram", "Facebook", "TikTok"];
   const [currentPlatform, setCurrentPlatform] = useState(platforms[0]);
 
-  // approvals: 'pending' | 'approved'
   const [approvals, setApprovals] = useState(
     days.reduce((acc, day) => ({ ...acc, [day]: Array(5).fill("pending") }), {})
   );
 
-  // per-slot state
   const [captions, setCaptions] = useState(
     days.reduce((acc, day) => ({ ...acc, [day]: Array(5).fill("") }), {})
   );
@@ -113,19 +94,10 @@ export default function SocialBots() {
     days.reduce((acc, day) => ({ ...acc, [day]: Array(5).fill(availableTimes[0]) }), {})
   );
 
-  const [files, setFiles] = useState(
-    days.reduce((acc, day) => ({ ...acc, [day]: Array(5).fill(null) }), {})
-  );
+  const [files, setFiles] = useState(days.reduce((acc, day) => ({ ...acc, [day]: Array(5).fill(null) }), {}));
+  const [busy, setBusy] = useState(days.reduce((acc, day) => ({ ...acc, [day]: Array(5).fill(false) }), {}));
+  const [slotErrors, setSlotErrors] = useState(days.reduce((acc, day) => ({ ...acc, [day]: Array(5).fill("") }), {}));
 
-  const [busy, setBusy] = useState(
-    days.reduce((acc, day) => ({ ...acc, [day]: Array(5).fill(false) }), {})
-  );
-
-  const [slotErrors, setSlotErrors] = useState(
-    days.reduce((acc, day) => ({ ...acc, [day]: Array(5).fill("") }), {})
-  );
-
-  // hidden file inputs (one per slot)
   const fileInputs = useRef(
     days.reduce((acc, day) => {
       acc[day] = Array.from({ length: 5 }, () => React.createRef());
@@ -144,45 +116,27 @@ export default function SocialBots() {
   };
 
   const setSlotBusy = (day, index, val) => {
-    setBusy((prev) => ({
-      ...prev,
-      [day]: prev[day].map((b, i) => (i === index ? val : b)),
-    }));
+    setBusy((prev) => ({ ...prev, [day]: prev[day].map((b, i) => (i === index ? val : b)) }));
   };
 
   const setError = (day, index, msg) => {
-    setSlotErrors((prev) => ({
-      ...prev,
-      [day]: prev[day].map((e, i) => (i === index ? msg : e)),
-    }));
+    setSlotErrors((prev) => ({ ...prev, [day]: prev[day].map((e, i) => (i === index ? msg : e)) }));
   };
 
   const updateCaption = (day, index, val) => {
-    setCaptions((prev) => ({
-      ...prev,
-      [day]: prev[day].map((c, i) => (i === index ? val : c)),
-    }));
+    setCaptions((prev) => ({ ...prev, [day]: prev[day].map((c, i) => (i === index ? val : c)) }));
   };
 
   const updateTime = (day, index, val) => {
-    setTimes((prev) => ({
-      ...prev,
-      [day]: prev[day].map((t, i) => (i === index ? val : t)),
-    }));
+    setTimes((prev) => ({ ...prev, [day]: prev[day].map((t, i) => (i === index ? val : t)) }));
   };
 
   const updateFile = (day, index, file) => {
-    setFiles((prev) => ({
-      ...prev,
-      [day]: prev[day].map((f, i) => (i === index ? file : f)),
-    }));
+    setFiles((prev) => ({ ...prev, [day]: prev[day].map((f, i) => (i === index ? file : f)) }));
   };
 
   const markApproved = (day, index) => {
-    setApprovals((prev) => ({
-      ...prev,
-      [day]: prev[day].map((status, i) => (i === index ? "approved" : status)),
-    }));
+    setApprovals((prev) => ({ ...prev, [day]: prev[day].map((status, i) => (i === index ? "approved" : status)) }));
   };
 
   async function requireAuth() {
@@ -205,28 +159,18 @@ export default function SocialBots() {
     });
 
     if (error) throw new Error(`Upload failed: ${error.message}`);
-    return path; // media_path
+    return path;
   }
 
   async function schedulePost({ accessToken, platform, scheduled_at, message, media_path }) {
     const res = await fetch(`${API_BASE}/api/social/schedule`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        platform, // "instagram" | "facebook"
-        scheduled_at,
-        message,
-        media_path, // only for instagram (Option A)
-      }),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ platform, scheduled_at, message, media_path }),
     });
 
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(json?.details || json?.error || `Schedule failed (${res.status})`);
-    }
+    if (!res.ok) throw new Error(json?.details || json?.error || `Schedule failed (${res.status})`);
     return json;
   }
 
@@ -244,7 +188,6 @@ export default function SocialBots() {
   const handleApprove = async (day, index) => {
     if (approvals[day][index] === "approved") return;
 
-    // TikTok is not wired yet
     if (currentPlatform === "TikTok") {
       setError(day, index, "TikTok scheduling is coming soon.");
       return;
@@ -258,33 +201,20 @@ export default function SocialBots() {
 
       const caption = captions[day][index] || "";
       const timeLabel = times[day][index] || availableTimes[0];
-
       const scheduled_at = nextOccurrenceISO(day, timeLabel);
 
-      const platformApi = currentPlatform.toLowerCase(); // instagram | facebook
+      const platformApi = currentPlatform.toLowerCase();
 
-      // Instagram requires media
       let media_path = null;
-
       if (platformApi === "instagram") {
         const file = files[day][index];
         if (!file) throw new Error("Instagram requires an image. Click the upload icon and choose a file.");
         media_path = await uploadToPoststore(userId, file);
       }
 
-      // Facebook: message recommended (allow empty, but you probably want it)
-      if (platformApi === "facebook" && !caption.trim()) {
-        throw new Error("Facebook post needs a caption/message.");
-      }
+      if (platformApi === "facebook" && !caption.trim()) throw new Error("Facebook post needs a caption/message.");
 
-      await schedulePost({
-        accessToken,
-        platform: platformApi,
-        scheduled_at,
-        message: caption,
-        media_path,
-      });
-
+      await schedulePost({ accessToken, platform: platformApi, scheduled_at, message: caption, media_path });
       markApproved(day, index);
     } catch (e) {
       setError(day, index, e?.message || "Something went wrong.");
@@ -301,7 +231,6 @@ export default function SocialBots() {
 
   return (
     <div className="tab-content active" id="social-bots">
-      {/* Slider Card */}
       <div className="slider-card-container">
         <div className="slider-card">
           <button className="slider-arrow left" onClick={prevPlatform}>
@@ -334,16 +263,7 @@ export default function SocialBots() {
                 return (
                   <div key={`${day}-${index}`} className="slot-wrap">
                     <div className="slot-card">
-                      {/* Upload */}
-                      <div
-                        className="slot-upload clickable"
-                        onClick={() => handlePickFile(day, index)}
-                        title={
-                          currentPlatform === "Instagram"
-                            ? "Upload image (required for Instagram)"
-                            : "Upload (optional / not used for Facebook yet)"
-                        }
-                      >
+                      <div className="slot-upload clickable" onClick={() => handlePickFile(day, index)}>
                         <Upload size={24} color="#667eea" />
                       </div>
 
@@ -363,11 +283,7 @@ export default function SocialBots() {
                         onChange={(e) => updateCaption(day, index, e.target.value)}
                       />
 
-                      <select
-                        className="slot-time"
-                        value={times[day][index]}
-                        onChange={(e) => updateTime(day, index, e.target.value)}
-                      >
+                      <select className="slot-time" value={times[day][index]} onChange={(e) => updateTime(day, index, e.target.value)}>
                         {availableTimes.map((t, idx) => (
                           <option key={idx} value={t}>
                             {t}
@@ -375,19 +291,12 @@ export default function SocialBots() {
                         ))}
                       </select>
 
-                      <button
-                        className={`btn approve-btn ${approved ? "approved" : ""}`}
-                        onClick={() => handleApprove(day, index)}
-                        disabled={approved || isBusy}
-                      >
+                      <button className={`btn approve-btn ${approved ? "approved" : ""}`} onClick={() => handleApprove(day, index)} disabled={approved || isBusy}>
                         {approved ? "Approved" : isBusy ? "Scheduling..." : "Approve"}
                       </button>
                     </div>
 
-                    {/* Small file name line */}
                     {file ? <div className="slot-meta">Selected: {file.name}</div> : null}
-
-                    {/* Error line */}
                     {err ? <div className="slot-error">{err}</div> : null}
                   </div>
                 );
@@ -397,158 +306,29 @@ export default function SocialBots() {
         ))}
       </div>
 
-      {/* Inline CSS for Slider, Slots, and Approve Button */}
       <style>{`
-        .slider-card-container {
-          display: flex;
-          justify-content: center;
-          margin-bottom: 25px;
-        }
-
-        .slider-card {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #f3f4f6;
-          padding: 15px 25px;
-          border-radius: 14px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .slider-arrow {
-          background: none;
-          border: none;
-          font-size: 28px;
-          cursor: pointer;
-          padding: 0 12px;
-          color: #333;
-        }
-
-        .slider-arrow:hover {
-          color: #667eea;
-        }
-
-        .platform-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 12px;
-        }
-
-        .bot-schedule {
-          max-height: calc(100vh - 200px);
-          overflow-y: auto;
-          padding-bottom: 20px;
-        }
-
-        .hint {
-          text-align: center;
-          color: #64748b;
-          margin-top: 6px;
-          margin-bottom: 18px;
-          font-size: 0.95rem;
-        }
-
-        .day-section {
-          margin-bottom: 30px;
-        }
-
-        .day-header {
-          font-size: 1.5rem;
-          font-weight: 600;
-          text-align: center;
-          margin: 15px 0;
-          color: #333;
-        }
-
-        .slots-container {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-          margin-top: 10px;
-        }
-
-        .slot-wrap {
-          width: 700px;
-          margin: 0 auto;
-        }
-
-        .slot-card {
-          display: flex;
-          align-items: center;
-          background: #fff;
-          padding: 10px 15px;
-          border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-          height: 50px;
-        }
-
-        .slot-upload {
-          margin-right: 15px;
-          display: flex;
-          align-items: center;
-        }
-
-        .slot-upload.clickable {
-          cursor: pointer;
-        }
-
-        .slot-caption {
-          flex: 1;
-          padding: 8px;
-          border: 1px solid #e2e8f0;
-          border-radius: 4px;
-          font-size: 14px;
-          margin-right: 15px;
-        }
-
-        .slot-time {
-          padding: 8px;
-          border: 1px solid #e2e8f0;
-          border-radius: 4px;
-          font-size: 14px;
-          width: 120px;
-          margin-right: 15px;
-        }
-
-        .approve-btn {
-          padding: 8px 16px;
-          border: none;
-          border-radius: 4px;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          background: #667eea;
-          color: white;
-        }
-
-        .approve-btn:hover:not(:disabled) {
-          background: #5a6bd6;
-          transform: translateY(-1px);
-        }
-
-        .approve-btn.approved {
-          background: #10b981;
-          cursor: default;
-        }
-
-        .approve-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .slot-meta {
-          margin-top: 6px;
-          font-size: 0.85rem;
-          color: #64748b;
-        }
-
-        .slot-error {
-          margin-top: 6px;
-          font-size: 0.9rem;
-          color: #ef4444;
-        }
+        .slider-card-container { display:flex; justify-content:center; margin-bottom:25px; }
+        .slider-card { display:flex; align-items:center; justify-content:center; background:#f3f4f6; padding:15px 25px; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+        .slider-arrow { background:none; border:none; font-size:28px; cursor:pointer; padding:0 12px; color:#333; }
+        .slider-arrow:hover { color:#667eea; }
+        .platform-icon { display:flex; align-items:center; justify-content:center; margin:0 12px; }
+        .bot-schedule { max-height:calc(100vh - 200px); overflow-y:auto; padding-bottom:20px; }
+        .hint { text-align:center; color:#64748b; margin-top:6px; margin-bottom:18px; font-size:0.95rem; }
+        .day-section { margin-bottom:30px; }
+        .day-header { font-size:1.5rem; font-weight:600; text-align:center; margin:15px 0; color:#333; }
+        .slots-container { display:flex; flex-direction:column; gap:15px; margin-top:10px; }
+        .slot-wrap { width:700px; margin:0 auto; }
+        .slot-card { display:flex; align-items:center; background:#fff; padding:10px 15px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); height:50px; }
+        .slot-upload { margin-right:15px; display:flex; align-items:center; }
+        .slot-upload.clickable { cursor:pointer; }
+        .slot-caption { flex:1; padding:8px; border:1px solid #e2e8f0; border-radius:4px; font-size:14px; margin-right:15px; }
+        .slot-time { padding:8px; border:1px solid #e2e8f0; border-radius:4px; font-size:14px; width:120px; margin-right:15px; }
+        .approve-btn { padding:8px 16px; border:none; border-radius:4px; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.3s ease; background:#667eea; color:white; }
+        .approve-btn:hover:not(:disabled) { background:#5a6bd6; transform:translateY(-1px); }
+        .approve-btn.approved { background:#10b981; cursor:default; }
+        .approve-btn:disabled { opacity:0.6; cursor:not-allowed; }
+        .slot-meta { margin-top:6px; font-size:0.85rem; color:#64748b; }
+        .slot-error { margin-top:6px; font-size:0.9rem; color:#ef4444; }
       `}</style>
     </div>
   );
