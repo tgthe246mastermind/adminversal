@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import { supabase } from "./supabaseClient";
 
 import Dashboard from "./Dashboard.jsx";
 import Login from "./Login.jsx";
