@@ -23,7 +23,11 @@ const PlatformIcon = ({ platform }) => {
 /* ============================================================
    Helpers
 ============================================================ */
+const BARBADOS_TZ = "America/Barbados";
+
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+// ✅ 12:00 AM -> 11:45 PM at 15-min intervals (96 slots)
 const availableTimes = Array.from({ length: 96 }, (_, i) => {
   const h24 = Math.floor(i / 4);
   const m = (i % 4) * 15;
@@ -31,7 +35,6 @@ const availableTimes = Array.from({ length: 96 }, (_, i) => {
   const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
   return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
 });
-
 
 function dayIndex(dayName) {
   const map = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
@@ -49,23 +52,93 @@ function parseTimeLabel(label) {
   return { hours: h, minutes };
 }
 
-function nextOccurrenceISO(dayName, timeLabel) {
-  const targetDow = dayIndex(dayName);
+/**
+ * Pull "calendar parts" for a Date as seen in a specific IANA timezone
+ */
+function tzParts(date, timeZone) {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    weekday: "short",
+  });
+
+  const parts = Object.fromEntries(dtf.formatToParts(date).map((p) => [p.type, p.value]));
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second),
+    weekday: parts.weekday, // "Mon", "Tue", ...
+  };
+}
+
+function weekdayIndexShort(w) {
+  // JS-style: 0=Sun..6=Sat
+  const map = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return map[w] ?? 0;
+}
+
+/**
+ * Convert a Barbados "wall clock" time (YYYY-MM-DD HH:mm in America/Barbados)
+ * into an actual UTC Date instant, using Intl (no Luxon).
+ */
+function dateFromBarbadosLocal(y, m, d, hh, mm) {
+  // naive initial guess: treat given local fields as UTC fields
+  let guess = new Date(Date.UTC(y, m - 1, d, hh, mm, 0));
+
+  // refine (handles offset)
+  for (let i = 0; i < 3; i++) {
+    const p = tzParts(guess, BARBADOS_TZ);
+
+    const desired = Date.UTC(y, m - 1, d, hh, mm, 0);
+    const shown = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, 0);
+
+    const diffMs = desired - shown;
+    if (diffMs === 0) break;
+    guess = new Date(guess.getTime() + diffMs);
+  }
+
+  return guess;
+}
+
+/**
+ * ✅ Next occurrence in Barbados time, returns UTC ISO string.
+ */
+function nextOccurrenceISO_Barbados(dayName, timeLabel) {
+  const targetDow = dayIndex(dayName); // 0..6 (Sun..Sat)
   const { hours, minutes } = parseTimeLabel(timeLabel);
 
   const now = new Date();
-  const candidate = new Date(now);
+  const nowBB = tzParts(now, BARBADOS_TZ);
+  const todayDowBB = weekdayIndexShort(nowBB.weekday);
 
-  candidate.setSeconds(0, 0);
-  candidate.setHours(hours, minutes, 0, 0);
-
-  const todayDow = now.getDay();
-  let delta = targetDow - todayDow;
+  let delta = targetDow - todayDowBB;
   if (delta < 0) delta += 7;
-  if (delta === 0 && candidate.getTime() <= now.getTime()) delta = 7;
 
-  candidate.setDate(now.getDate() + delta);
-  return candidate.toISOString();
+  // Use a "midday UTC anchor" to safely hop days, then read the Barbados calendar date
+  const baseUtcMidday = new Date(Date.UTC(nowBB.year, nowBB.month - 1, nowBB.day, 12, 0, 0));
+  baseUtcMidday.setUTCDate(baseUtcMidday.getUTCDate() + delta);
+  const baseBB = tzParts(baseUtcMidday, BARBADOS_TZ);
+
+  let candidate = dateFromBarbadosLocal(baseBB.year, baseBB.month, baseBB.day, hours, minutes);
+
+  // If the slot is "today" in Barbados and already passed, push to next week
+  if (delta === 0 && candidate.getTime() <= now.getTime()) {
+    const plus7Midday = new Date(Date.UTC(baseBB.year, baseBB.month - 1, baseBB.day, 12, 0, 0));
+    plus7Midday.setUTCDate(plus7Midday.getUTCDate() + 7);
+    const plus7BB = tzParts(plus7Midday, BARBADOS_TZ);
+    candidate = dateFromBarbadosLocal(plus7BB.year, plus7BB.month, plus7BB.day, hours, minutes);
+  }
+
+  return candidate.toISOString(); // UTC ISO for backend
 }
 
 function sanitizeFileName(name) {
@@ -179,7 +252,6 @@ export default function SocialBots() {
     }
   }
 
-  // ✅ FIXED: no more res.json() crash
   async function schedulePost({ accessToken, platform, scheduled_at, message, media_path }) {
     const res = await fetch(`${API_BASE}/api/social/schedule`, {
       method: "POST",
@@ -225,7 +297,9 @@ export default function SocialBots() {
 
       const caption = captions[day][index] || "";
       const timeLabel = times[day][index] || availableTimes[0];
-      const scheduled_at = nextOccurrenceISO(day, timeLabel);
+
+      // ✅ Barbados-anchored scheduling
+      const scheduled_at = nextOccurrenceISO_Barbados(day, timeLabel);
 
       const platformApi = currentPlatform.toLowerCase();
 
@@ -354,7 +428,7 @@ export default function SocialBots() {
         .slot-upload { margin-right:15px; display:flex; align-items:center; }
         .slot-upload.clickable { cursor:pointer; }
         .slot-caption { flex:1; padding:8px; border:1px solid #e2e8f0; border-radius:4px; font-size:14px; margin-right:15px; }
-        .slot-time { padding:8px; border:1px solid #e2e8f0; border-radius:4px; font-size:14px; width:120px; margin-right:15px; }
+        .slot-time { padding:8px; border:1px solid #e2e8f0; border-radius:4px; font-size:14px; width:140px; margin-right:15px; }
         .approve-btn { padding:8px 16px; border:none; border-radius:4px; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.3s ease; background:#667eea; color:white; }
         .approve-btn:hover:not(:disabled) { background:#5a6bd6; transform:translateY(-1px); }
         .approve-btn.approved { background:#10b981; cursor:default; }
