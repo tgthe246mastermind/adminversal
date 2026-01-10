@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from "./lib/supabaseClient";
 
 function Profile() {
   const API_BASE = import.meta.env.VITE_API_URL;
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  async function safeJson(res) {
+    const text = await res.text();
+    try {
+      return { json: JSON.parse(text), text };
+    } catch {
+      return { json: null, text };
+    }
+  }
 
   const fetchAccounts = async () => {
     setLoading(true);
@@ -21,7 +25,6 @@ function Profile() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      console.error("Profile: No session found during fetchAccounts");
       setLoading(false);
       return;
     }
@@ -30,9 +33,14 @@ function Profile() {
       const res = await fetch(`${API_BASE}/api/auth/facebook/accounts`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      setAccounts(json.accounts || []);
+
+      const { json, text } = await safeJson(res);
+
+      if (!res.ok) {
+        throw new Error(json?.details || json?.error || `HTTP ${res.status}: ${text.slice(0, 140)}`);
+      }
+
+      setAccounts(json?.accounts || []);
     } catch (err) {
       setError(`Load Error: ${err.message}`);
     } finally {
@@ -46,8 +54,6 @@ function Profile() {
       const tempId = params.get("fb_connect");
       const urlError = params.get("error");
 
-      console.log("Profile URL Check:", { tempId, urlError });
-
       if (urlError) {
         setError(`Worker Error: ${urlError}`);
         setLoading(false);
@@ -56,7 +62,6 @@ function Profile() {
 
       if (tempId) {
         setLoading(true);
-        console.log("Finalizing connection for ID:", tempId);
 
         const {
           data: { session },
@@ -77,10 +82,13 @@ function Profile() {
             },
             body: JSON.stringify({ temp_id: tempId }),
           });
-          const json = await res.json();
-          if (!res.ok) throw new Error(json.error || "Finalize failed");
 
-          console.log("Finalize Success!");
+          const { json, text } = await safeJson(res);
+
+          if (!res.ok) {
+            throw new Error(json?.details || json?.error || `HTTP ${res.status}: ${text.slice(0, 140)}`);
+          }
+
           window.history.replaceState({}, "", "/profile");
           await fetchAccounts();
         } catch (err) {
@@ -97,18 +105,10 @@ function Profile() {
   }, []);
 
   const handleLogin = () => {
-    const params = new URLSearchParams({
-      client_id: import.meta.env.VITE_FB_APP_ID,
-      redirect_uri: `${API_BASE}/api/auth/facebook/callback`,
-      scope: "pages_show_list,instagram_basic,email,business_management",
-      response_type: "code",
-    });
-    window.location.href = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
+    // Prefer the Worker login endpoint (keeps scopes centralized)
+    window.location.href = `${API_BASE}/api/auth/facebook/login`;
   };
 
-  // Supports either:
-  // a.picture = "https://..."
-  // or a.picture.data.url = "https://..."
   const getPictureUrl = (a) => {
     if (!a) return "";
     if (typeof a.picture === "string") return a.picture;
@@ -125,14 +125,7 @@ function Profile() {
       <h2>Facebook Profile</h2>
 
       {error && (
-        <div
-          style={{
-            background: "#fee2e2",
-            color: "#991b1b",
-            padding: 10,
-            marginBottom: 10,
-          }}
-        >
+        <div style={{ background: "#fee2e2", color: "#991b1b", padding: 10, marginBottom: 10 }}>
           {error}
         </div>
       )}
@@ -143,7 +136,6 @@ function Profile() {
         {loading ? (
           <p>Processing...</p>
         ) : (
-          // ✅ NO CHANGE to structure — only the content is dynamic
           <div className="user-profile">
             <div className="avatar">
               {picture ? (
@@ -157,10 +149,7 @@ function Profile() {
                     objectFit: "cover",
                     display: "block",
                   }}
-                  onError={(e) => {
-                    // if image fails, fall back to the initial letter (no structure change)
-                    e.currentTarget.remove();
-                  }}
+                  onError={(e) => e.currentTarget.remove()}
                 />
               ) : (
                 initial
