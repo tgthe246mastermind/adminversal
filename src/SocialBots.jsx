@@ -24,7 +24,14 @@ const PlatformIcon = ({ platform }) => {
    Helpers
 ============================================================ */
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const availableTimes = ["9:00 AM", "12:00 PM", "3:00 PM", "6:00 PM", "8:00 PM"];
+const availableTimes = Array.from({ length: 96 }, (_, i) => {
+  const h24 = Math.floor(i / 4);
+  const m = (i % 4) * 15;
+  const ampm = h24 >= 12 ? "PM" : "AM";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+});
+
 
 function dayIndex(dayName) {
   const map = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
