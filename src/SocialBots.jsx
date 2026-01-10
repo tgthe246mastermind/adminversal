@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { Instagram, Facebook, Upload } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTiktok } from "@fortawesome/free-brands-svg-icons";
-import { supabase } from "./lib/supabaseClient";
+import { supabase } from "./supabaseClient";
 
 /* ============================================================
    UI Icons
@@ -162,6 +162,17 @@ export default function SocialBots() {
     return path;
   }
 
+  // ✅ Safe JSON parser (prevents "Unexpected non-whitespace character after JSON...")
+  async function safeJson(res) {
+    const text = await res.text();
+    try {
+      return { json: JSON.parse(text), text };
+    } catch {
+      return { json: null, text };
+    }
+  }
+
+  // ✅ FIXED: no more res.json() crash
   async function schedulePost({ accessToken, platform, scheduled_at, message, media_path }) {
     const res = await fetch(`${API_BASE}/api/social/schedule`, {
       method: "POST",
@@ -169,8 +180,14 @@ export default function SocialBots() {
       body: JSON.stringify({ platform, scheduled_at, message, media_path }),
     });
 
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json?.details || json?.error || `Schedule failed (${res.status})`);
+    const { json, text } = await safeJson(res);
+
+    if (!res.ok) {
+      throw new Error(json?.details || json?.error || `HTTP ${res.status}: ${text.slice(0, 180)}`);
+    }
+    if (!json) {
+      throw new Error(`Expected JSON but got: ${text.slice(0, 180)}`);
+    }
     return json;
   }
 
@@ -283,7 +300,11 @@ export default function SocialBots() {
                         onChange={(e) => updateCaption(day, index, e.target.value)}
                       />
 
-                      <select className="slot-time" value={times[day][index]} onChange={(e) => updateTime(day, index, e.target.value)}>
+                      <select
+                        className="slot-time"
+                        value={times[day][index]}
+                        onChange={(e) => updateTime(day, index, e.target.value)}
+                      >
                         {availableTimes.map((t, idx) => (
                           <option key={idx} value={t}>
                             {t}
@@ -291,7 +312,11 @@ export default function SocialBots() {
                         ))}
                       </select>
 
-                      <button className={`btn approve-btn ${approved ? "approved" : ""}`} onClick={() => handleApprove(day, index)} disabled={approved || isBusy}>
+                      <button
+                        className={`btn approve-btn ${approved ? "approved" : ""}`}
+                        onClick={() => handleApprove(day, index)}
+                        disabled={approved || isBusy}
+                      >
                         {approved ? "Approved" : isBusy ? "Scheduling..." : "Approve"}
                       </button>
                     </div>
