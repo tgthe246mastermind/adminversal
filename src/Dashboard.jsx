@@ -24,7 +24,7 @@ function Dashboard() {
 
   // ✅ Header user-profile data (connect_accounts.*)
   const [connectedProfile, setConnectedProfile] = useState({
-    name: "Scarlett",
+    name: "User",
     picture: "",
   });
 
@@ -101,18 +101,18 @@ function Dashboard() {
         if (!first) return;
 
         setConnectedProfile({
-          name: first.name || "Scarlett",
+          name: first.name || "User",
           picture: getPictureUrl(first),
         });
       } catch (e) {
-        // Silent fail — keep Scarlett fallback
+        // Silent fail — keep User fallback
       }
     };
 
     loadHeaderAccount();
   }, [API_BASE]);
 
-  const displayName = connectedProfile.name || "Scarlett";
+  const displayName = connectedProfile.name || "User";
   const initial =
     (displayName || "S").trim().charAt(0).toUpperCase() || "S";
 
