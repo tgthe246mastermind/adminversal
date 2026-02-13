@@ -116,7 +116,7 @@ function Profile() {
   };
 
   const primary = accounts?.[0] || null;
-  const name = primary?.name || "Scarlett";
+  const name = primary?.name || "User";
   const picture = getPictureUrl(primary);
   const initial = (name || "S").trim().charAt(0).toUpperCase() || "S";
 
